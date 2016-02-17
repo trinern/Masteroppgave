@@ -1,0 +1,7 @@
+Height:[
+3.0
+]
+
+nIntervals:[
+2
+]
