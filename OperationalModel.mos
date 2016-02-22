@@ -5,8 +5,9 @@ options explterm, noimplicit;
 
 parameters
 	TestFile = 'TestData.txt';
-	TideFile = 'TideData.txt';!holds Havg(Cycles) and nIntervals(Cycles)
-	!PriceFile = 'PriceData.txt;
+	!FixedFile = 'FixedData.txt';
+	TideFile = 'TideData.txt';!holds Height(Cycles),nIntervals(Cycles),nMaxIntervals,Duration,nCycles
+	PriceFile = 'PriceData.txt';
 	original = true;
 	SOSimplementation = false;	
 	Presolve = true;
@@ -31,9 +32,12 @@ declarations
 end-declarations
 	
 initializations from TestFile
+	nTurbines;
+end-initializations
+
+initializations from TideFile
 	nCycles;
 	nMaxIntervals;
-	nTurbines;
 end-initializations
 	
 declarations
@@ -55,22 +59,21 @@ declarations
 	Price:		array(Cycles,Intervals)	of real;	!power price
 	Height:		array(Cycles)			of real;	!estimated avg height difference in cycle c
 	nIntervals:	array(Cycles)			of integer;	!number of production intervals in cycle c
-	!largest reservoir volume in cycle c
 end-declarations
-(!	
+!(!	
 initializations from PriceFile
 	Price;	
 end-initializations
-!)
+!!)
 initializations from TideFile
-	Height;
 	nIntervals;	
+	Height;
 end-initializations
-
+(!
 initializations from TestFile
 	Price;	
 end-initializations
-
+!)
 !Constants
 declarations
 	CFD:		integer;
@@ -87,7 +90,6 @@ end-declarations
 	
 initializations from TestFile
 	CFD;
-	Duration;
 	OprCost;
 	Eta;
 	Rho;
@@ -96,6 +98,10 @@ initializations from TestFile
 	Qmin;
 	Pi;
 	R;
+end-initializations
+
+initializations from TideFile
+	Duration;
 end-initializations
 
 !Variables
@@ -139,7 +145,7 @@ ObjValue :=
 	-
 	sum(cc in Cycles,tt in Intervals,nn in Turbines) OprCost*starting(cc,tt,nn);
 	
-forall(cc in Cycles,tt in Intervals) do
+forall(cc in Cycles,tt in Intervals | tt<=nIntervals(cc)) do
 	Power(cc,tt):=
 		power(cc,tt)= sum(nn in Turbines)Eta*Rho*G*Height(cc)*flow(cc,tt,nn);
 end-do
@@ -149,17 +155,17 @@ forall(cc in Cycles) do! total flow <=Volume0 for sylindrical reservoir
 		sum(tt in Intervals,nn in Turbines)flow(cc,tt,nn)+ spill(cc)= 2*Pi*R^2*Height(cc);
 end-do
 
-forall(cc in Cycles,tt in Intervals,nn in Turbines) do
+forall(cc in Cycles,tt in Intervals | tt<=nIntervals(cc),nn in Turbines) do
 	MaxFlow(cc,tt,nn):=
 		flow(cc,tt,nn)-Qmax*running(cc,tt,nn) <= 0;
 end-do
 
-forall(cc in Cycles,tt in Intervals,nn in Turbines) do
+forall(cc in Cycles,tt in Intervals | tt<=nIntervals(cc),nn in Turbines) do
 	MinFlow(cc,tt,nn):=
 		flow(cc,tt,nn)-Qmin*running(cc,tt,nn) >= 0;
 end-do
 
-forall(cc in Cycles,tt in Intervals|tt>1,nn in Turbines) do
+forall(cc in Cycles,tt in Intervals | tt>1 and tt<=nIntervals(cc),nn in Turbines) do
 	StartCon(cc,tt,nn):=
 		running(cc,(tt-1),nn)+starting(cc,tt,nn)-running(cc,tt,nn)=0;
 end-do
@@ -169,7 +175,7 @@ forall(cc in Cycles,nn in Turbines) do
 		starting(cc,1,nn)=running(cc,1,nn);
 end-do
 
-forall(cc in Cycles,tt in Intervals,nn in Turbines|nn<nTurbines) do
+forall(cc in Cycles,tt in Intervals | tt<=nIntervals(cc),nn in Turbines|nn<nTurbines) do
 	Symmetry(cc,tt,nn):=
 		flow(cc,tt,nn)-flow(cc,tt,(nn+1))>=0;
 end-do
