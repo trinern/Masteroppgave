@@ -1,4 +1,4 @@
-model OperationalModel
+model OperationalConstantHead
 uses "mmxprs"; !gain access to the Xpress-Optimizer solver
 
 options explterm, noimplicit;
