@@ -5,9 +5,6 @@ options explterm, noimplicit;
 
 parameters
 	TestFile = 'TestData.txt';
-	!FixedFile = 'FixedData.txt';
-	TideFile = 'TideData.txt';!holds Height(Cycles),nIntervals(Cycles),nMaxIntervals,Duration,nCycles
-	PriceFile = 'PriceData.txt';
 	original = true;
 	SOSimplementation = false;	
 	Presolve = true;
@@ -27,53 +24,69 @@ timetracker := timestamp; ! assigns current "timestamp" to timetracker
 !Declarations of sets
 declarations
 	nCycles:			integer;
-	nMaxIntervals:		integer;
+	nMaxPeriods:		integer;
 	nTurbines:			integer;
+	nFlowBreakPoints:	integer;
+	nHeadBreakPoints:	integer;
 end-declarations
 	
 initializations from TestFile
-	nTurbines;
-end-initializations
-
-initializations from TideFile
 	nCycles;
-	nMaxIntervals;
+	nMaxPeriods;
+	nTurbines;
+	nFlowBreakPoints;
+	nHeadBreakPoints;
 end-initializations
 	
 declarations
 	Cycles:			set of integer;
-	Intervals:		set of integer;
+	Periods:		set of integer;
 	Turbines:		set of integer;
+	FlowBreakPoints:set of integer;
+	HeadBreakPoints:set of integer;
+	DiagFlowCons:	set of integer;
+	DiagHeadCons:	set of integer;
 end-declarations	
 
 Cycles		:= 1 .. nCycles;!c
-Intervals	:= 1 .. nMaxIntervals;!t
+Periods	:= 1 .. nMaxPeriods;!t
 Turbines	:= 1 .. nTurbines;!n
+FlowBreakPoints	:= 1.. nFlowBreakPoints;!r
+HeadBreakPoints	:= 1.. nHeadBreakPoints;!k
+DiagFlowCons := 0 .. nFlowBreakPoints;!i	i=0 for the elements 11,22,33 etc
+DiagHeadCons := 1 .. nHeadBreakPoints;!j
 
 finalize(Cycles);
-finalize(Intervals);
+finalize(Periods);
 finalize(Turbines);
+finalize(FlowBreakPoints);
+finalize(HeadBreakPoints);
+finalize(DiagFlowCons);
+finalize(DiagHeadCons);
 
 !Declarations of parameters in matrix form	
 declarations
-	Price:		array(Cycles,Intervals)	of real;	!power price
-	Height:		array(Cycles)			of real;	!estimated avg height difference in cycle c
-	nIntervals:	array(Cycles)			of integer;	!number of production intervals in cycle c
+	nPeriods:	array(Cycles)			of integer;	!number of production Periods in cycle c
+	Volume0:	array(Cycles)			of integer;
+	IsHighTide:	array(Cycles)			of integer;	!=1 if cycle starts in high tide, -1 otherwise
+	Flow:		array(FlowBreakPoints)	of integer;!Flow in break point r
+	Price:		array(Cycles,Periods)	of real;	!power price
+	TideHead:	array(Cycles,Periods)	of real;	!estimated avg height difference in cycle c
+	ResHead:	array(Cycles,HeadBreakPoints) of real;!Reservoir head in break point k
+	Power:		array(Cycles,FlowBreakPoints,HeadBreakPoints)	of real;
 end-declarations
-!(!	
-initializations from PriceFile
-	Price;	
-end-initializations
-!!)
-initializations from TideFile
-	nIntervals;	
-	Height;
-end-initializations
-(!
+
 initializations from TestFile
+	nPeriods;
+	Volume0;
+	IsHighTide;
+	Flow;
 	Price;	
+	TideHead;	
+	ResHead;
+	Power;
 end-initializations
-!)
+
 !Constants
 declarations
 	CFD:		integer;
@@ -84,40 +97,48 @@ declarations
 	G:			real;
 	Qmax:		integer;
 	Qmin:		integer;
-	Pi:			real;
-	R:			integer;
+	Area:		real;
 end-declarations
 	
 initializations from TestFile
 	CFD;
+	Duration;
 	OprCost;
 	Eta;
 	Rho;
 	G;
 	Qmax;
 	Qmin;
-	Pi;
-	R;
-end-initializations
-
-initializations from TideFile
-	Duration;
+	Area;
 end-initializations
 
 !Variables
 declarations	
-	power: 		dynamic array (Cycles,Intervals) of mpvar;
-	flow:		dynamic array (Cycles,Intervals,Turbines) of mpvar;
-	starting:	dynamic array (Cycles,Intervals,Turbines) of mpvar;
-	running:	dynamic array (Cycles,Intervals,Turbines) of mpvar;
 	spill:		dynamic array (Cycles) of mpvar;
+	power: 		dynamic array (Cycles,Periods) of mpvar;
+	resHead:	dynamic array (Cycles,Periods)	of mpvar;
+	head:		dynamic array (Cycles,Periods) of mpvar;
+	flow:		dynamic array (Cycles,Periods,Turbines) of mpvar;
+	starting:	dynamic array (Cycles,Periods,Turbines) of mpvar;
+	running:	dynamic array (Cycles,Periods,Turbines) of mpvar;
+	weight:		dynamic array (Cycles,Periods,Turbines,FlowBreakPoints,HeadBreakPoints)	of mpvar;
+	sumHWeight:	dynamic array (Cycles,Periods, Turbines,FlowBreakPoints)	of mpvar;
+	sumQWeight: dynamic array (Cycles,Periods, Turbines,HeadBreakPoints)	of mpvar;
+	diagSumQ:	dynamic array (Cycles,Periods, Turbines,DiagFlowCons)	of mpvar;
+	diagSumH:	dynamic array (Cycles,Periods, Turbines,DiagHeadCons)	of mpvar;
 end-declarations
 
-forall (cc in Cycles, tt in Intervals | tt<=nIntervals(cc)) do
-	create(power(cc,tt));
+forall (cc in Cycles) do
+	create(spill(cc));
 end-do
 
-forall (cc in Cycles, tt in Intervals | tt<=nIntervals(cc),nn in Turbines) do
+forall (cc in Cycles, tt in Periods | tt<=nPeriods(cc)) do
+	create(power(cc,tt));
+	create(resHead(cc,tt));
+	create(head(cc,t));
+end-do
+
+forall (cc in Cycles, tt in Periods | tt<=nPeriods(cc),nn in Turbines) do
 	create(flow(cc,tt,nn));
 	create(starting(cc,tt,nn));
 	create(running(cc,tt,nn));
@@ -125,47 +146,102 @@ forall (cc in Cycles, tt in Intervals | tt<=nIntervals(cc),nn in Turbines) do
 	running(cc,tt,nn) is_binary;
 end-do
 
-forall (cc in Cycles) do
-	create(spill(cc));
+forall (cc in Cycles,tt in Periods|tt<=nPeriods(cc),nn in Turbines,rr in FlowBreakPoints,kk in HeadBreakPoints) do
+	create(weight(cc,tt,nn,rr,kk));
+end-do
+
+forall(cc in Cycles,tt in Periods|tt<=nPeriods(cc),nn in Turbines,rr in FlowBreakPoints) do
+	create(sumHWeight(cc,tt,nn,rr));
+	!sumHWeight(cc,tt,nn,rr) is_sos2;!funker dette??
+end-do
+
+forall(cc in Cycles,tt in Periods|tt<=nPeriods(cc),nn in Turbines,kk in HeadBreakPoints) do
+	create(sumQWeight(cc,tt,nn,kk));
+	!sumQWeight(cc,tt,nn,kk) is_sos2;!funker dette??
+end-do
+
+forall(cc in Cycles,tt in Periods|tt<=nPeriods(cc),nn in Turbines,ii in DiagFlowCons) do
+	create(diagSumQ(cc,tt,nn,ii));
+end-do
+
+forall(cc in Cycles,tt in Periods|tt<=nPeriods(cc),nn in Turbines,jj in DiagHeadCons) do
+	create(diagSumH(cc,tt,nn,jj));
 end-do
 
 declarations
 	ObjValue:		linctr;
-	Power:			dynamic array (Cycles, Intervals) of linctr;
+	FlowCon:		dynamic array (Cycles, Periods, Turbines) of linctr;
+	ResHeadCon:		dynamic array (Cycles, Periods,) of linctr;
+	PowerCon:		dynamic array (Cycles, Periods) of linctr;
+	SumWeight:		dynamic array (Cycles, Periods, Turbines) of linctr;
+	HeadFlowCon:	dynamic array (Cycles, Periods) of linctr;
+	HeadCon:		dynamic array (Cycles, Periods) of linctr;
 	TotalFlow:		dynamic array (Cycles) of linctr;
-	MaxFlow:		dynamic array (Cycles, Intervals, Turbines) of linctr;
-	MinFlow:		dynamic array (Cycles, Intervals, Turbines) of linctr;
-	StartCon:		dynamic array (Cycles, Intervals, Turbines) of linctr;
+	MaxFlow:		dynamic array (Cycles, Periods, Turbines) of linctr;
+	MinFlow:		dynamic array (Cycles, Periods, Turbines) of linctr;
+	StartCon:		dynamic array (Cycles, Periods, Turbines) of linctr;
 	StartCon0:		dynamic array (Cycles, Turbines) of linctr;
-	Symmetry:		dynamic array (Cycles, Intervals, Turbines) of linctr;
+	Symmetry:		dynamic array (Cycles, Periods, Turbines) of linctr;
+	SumHeadWeight:	dynamic array (Cycles, Periods, Turbines,FlowBreakPoints) of linctr;
+	SumFlowWeight:	dynamic array (Cycles, Periods, Turbines,HeadBreakPoints) of linctr;
+	SumHeadDiag:	dynamic array (Cycles, Periods, Turbines,DiagFlowCons) of linctr;
+	SumFlowDiag:	dynamic array (Cycles, Periods, Turbines,DiagHeadCons) of linctr;
+	SOS2R:			dynamic array (Cycles, Periods, Turbines,FlowBreakPoints) of linctr;
+	SOS2K			dynamic array (Cycles, Periods, Turbines,HeadBreakPoints) of linctr;
+	SOS2Diag:		dynamic array (Cycles,Periods,Turbines,DiagFlowCons,DiagHeadCons) of linctr;
 end-declarations
 
 ObjValue :=
-	sum(cc in Cycles,tt in Intervals)(Price(cc,tt)+CFD)*power(cc,tt)*Duration
+	sum(cc in Cycles,tt in Periods| tt<=nPeriods(cc))(Price(cc,tt)+CFD)*power(cc,tt)*Duration
 	-
-	sum(cc in Cycles,tt in Intervals,nn in Turbines) OprCost*starting(cc,tt,nn);
-	
-forall(cc in Cycles,tt in Intervals | tt<=nIntervals(cc)) do
-	Power(cc,tt):=
-		power(cc,tt)= sum(nn in Turbines)Eta*Rho*G*Height(cc)*flow(cc,tt,nn);
+	sum(cc in Cycles,tt in Periods| tt<=nPeriods(cc),nn in Turbines) OprCost*starting(cc,tt,nn);
+
+forall(cc in Cycles,tt in Periods| tt<=nPeriods(cc),nn in Turbines) do
+	FlowCon(cc,tt,nn):=
+		sum(rr in FlowBreakPoints,kk in HeadBreakPoints) Flow(rr)*weight(cc,tt,nn,rr,kk);
 end-do
+
+forall(cc in Cycles, tt in Periods| tt<=nPeriods(cc)) do
+	ResHeadCon(cc,tt):=
+		sum(rr in FlowBreakPoints,kk in HeadBreakPoints,nn in Turbines) ResHead(cc,kk)*weight(cc,tt,nn,rr,kk);
+end-do
+
+forall(cc in Cycles, tt in Periods| tt<=nPeriods(cc)) do
+	PowerCon(cc,tt):=
+		sum(rr in FlowBreakPoints,kk in HeadBreakPoints,nn in Turbines) Power(cc,rr,kk)*weight(cc,tt,nn,rr,kk);
+end-do
+
+forall(cc in Cycles,tt in Periods| tt<=nPeriods(cc), nn in Turbines)
+	SumWeight(cc,tt,nn):=
+		sum(rr in FlowBreakPoints,kk in HeadBreakPoints) weight(cc,tt,nn,rr,kk)=1;
+end-do
+
+forall(cc in Cycles, tt in Periods|tt>1 and tt<=nPeriods(cc)) do
+	HeadFlowCon(cc,tt):=
+		resHead(cc,tt)<=resHead(cc,(tt-1))-IsHighTide(cc)*Duration/Area*sum(i in 1..(tt-1))flow(cc,tt,nn);
+end-do		
+
+forall(cc in Cycles, tt in Periods|tt>1 and tt<=nPeriods(cc)) do
+	HeadCon(cc,tt):=
+		head(cc,tt)=IsHighTide(cc)*resHead(cc,tt)-IsHighTide(cc)*TideHead(cc,tt);!production head =abs(ResHead-TideHead)
+end-do		
 
 forall(cc in Cycles) do! total flow <=Volume0 for sylindrical reservoir
 	TotalFlow(cc):=
-		sum(tt in Intervals,nn in Turbines)flow(cc,tt,nn)+ spill(cc)= 2*Pi*R^2*Height(cc);
+		sum(tt in Periods,nn in Turbines)flow(cc,tt,nn)+ spill(cc)= Volume0(cc);
 end-do
 
-forall(cc in Cycles,tt in Intervals | tt<=nIntervals(cc),nn in Turbines) do
+forall(cc in Cycles,tt in Periods | tt<=nPeriods(cc),nn in Turbines) do
 	MaxFlow(cc,tt,nn):=
 		flow(cc,tt,nn)-Qmax*running(cc,tt,nn) <= 0;
 end-do
 
-forall(cc in Cycles,tt in Intervals | tt<=nIntervals(cc),nn in Turbines) do
+forall(cc in Cycles,tt in Periods | tt<=nPeriods(cc),nn in Turbines) do
 	MinFlow(cc,tt,nn):=
 		flow(cc,tt,nn)-Qmin*running(cc,tt,nn) >= 0;
 end-do
 
-forall(cc in Cycles,tt in Intervals | tt>1 and tt<=nIntervals(cc),nn in Turbines) do
+forall(cc in Cycles,tt in Periods | tt>1 and tt<=nPeriods(cc),nn in Turbines) do
 	StartCon(cc,tt,nn):=
 		running(cc,(tt-1),nn)+starting(cc,tt,nn)-running(cc,tt,nn)=0;
 end-do
@@ -175,9 +251,44 @@ forall(cc in Cycles,nn in Turbines) do
 		starting(cc,1,nn)=running(cc,1,nn);
 end-do
 
-forall(cc in Cycles,tt in Intervals | tt<=nIntervals(cc),nn in Turbines|nn<nTurbines) do
+forall(cc in Cycles,tt in Periods | tt<=nPeriods(cc),nn in Turbines|nn<nTurbines) do
 	Symmetry(cc,tt,nn):=
 		flow(cc,tt,nn)-flow(cc,tt,(nn+1))>=0;
+end-do
+
+forall(cc in Cycles,tt in Periods,nn in Turbines, rr in FlowBreakPoints) do
+	SumHeadWeight(cc,tt,nn,rr):=
+		sumHWeight(cc,tt,nn,rr) = sum(kk in HeadBreakPoints) weight(cc,tt,nn,rr,kk);
+end-do
+
+forall(cc in Cycles,tt in Periods,nn in Turbines, kk in HeadBreakPoints) do
+	SumFlowWeight(cc,tt,nn,kk):=
+		sumQWeight(cc,tt,nn,kk) = sum(rr in FlowBreakPoints) weight(cc,tt,nn,rr,kk)
+end-do
+
+forall(cc in Cycles,tt in Periods,nn in Turbines, ii in DiagFlowCons) do
+	SumHeadDiag(cc,tt,nn,ii):=
+		diagSumQ(cc,tt,nn,ii) = sum(rr in FlowBreakPoints) weight(cc,tt,nn,rr,(ii+rr));
+end-do
+
+forall(cc in Cycles,tt in Periods,nn in Turbines, jj in DiagHeadCons) do
+	SumFlowDiag(cc,tt,nn,jj):=
+		diagSumH(cc,tt,nn,jj) = sum(kk in HeadBreakPoints)weight(cc,tt,nn,(jj+kk),kk);
+end-do
+
+forall(cc in Cycles, tt in Periods, nn in Turbines, rr in FlowBreakPoints) do
+	SOS2R(cc,tt,nn,rr):=
+		sum(kk in HeadBreakPoints) sumHWeight(cc,tt,nn,rr) is_sos2;
+end-do
+
+forall(cc in Cycles, tt in Periods, nn in Turbines, kk in HeadBreakPoints) do
+	SOS2K(cc,tt,nn,kk):=
+		sum(rr in FlowBreakPoints) sumQWeight(cc,tt,nn,kk) is_sos2;
+end-do
+
+forall(cc in Cycles, tt in Periods, nn in Turbines) do
+	SOS2Diag(cc,tt,nn):=
+		sum(ii in DiagFlowCons)diagSumQ(cc,tt,nn,ii) + sum(jj in DiagHeadCons)diagSumH(cc,tt,nn,jj) is_sos2;
 end-do
 
 
