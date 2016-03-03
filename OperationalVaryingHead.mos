@@ -4,7 +4,7 @@ uses "mmxprs"; !gain access to the Xpress-Optimizer solver
 options explterm, noimplicit;
 
 parameters
-	TestFile = 'TestData.txt';
+	TestFile = 'TestDataVar.txt';
 	original = true;
 	SOSimplementation = false;	
 	Presolve = true;
@@ -44,25 +44,22 @@ declarations
 	Turbines:		set of integer;
 	FlowBreakPoints:set of integer;
 	HeadBreakPoints:set of integer;
-	DiagFlowCons:	set of integer;
-	DiagHeadCons:	set of integer;
+	DiagCons:		set of integer;
 end-declarations	
 
-Cycles		:= 1 .. nCycles;!c
-Periods	:= 1 .. nMaxPeriods;!t
-Turbines	:= 1 .. nTurbines;!n
-FlowBreakPoints	:= 1.. nFlowBreakPoints;!r
-HeadBreakPoints	:= 1.. nHeadBreakPoints;!k
-DiagFlowCons := 0 .. nFlowBreakPoints;!i	i=0 for the elements 11,22,33 etc
-DiagHeadCons := 1 .. nHeadBreakPoints;!j
+Cycles			:= 1 .. nCycles;!c
+Periods			:= 1 .. nMaxPeriods;!t
+Turbines		:= 1 .. nTurbines;!n
+FlowBreakPoints	:= 1 .. nFlowBreakPoints;!r
+HeadBreakPoints	:= 1 .. nHeadBreakPoints;!k
+DiagCons 		:= 1 .. (nFlowBreakPoints+nHeadBreakPoints-1);!i	
 
 finalize(Cycles);
 finalize(Periods);
 finalize(Turbines);
 finalize(FlowBreakPoints);
 finalize(HeadBreakPoints);
-finalize(DiagFlowCons);
-finalize(DiagHeadCons);
+finalize(DiagCons);
 
 !Declarations of parameters in matrix form	
 declarations
@@ -124,8 +121,7 @@ declarations
 	weight:		dynamic array (Cycles,Periods,Turbines,FlowBreakPoints,HeadBreakPoints)	of mpvar;
 	sumHWeight:	dynamic array (Cycles,Periods, Turbines,FlowBreakPoints)	of mpvar;
 	sumQWeight: dynamic array (Cycles,Periods, Turbines,HeadBreakPoints)	of mpvar;
-	diagSumQ:	dynamic array (Cycles,Periods, Turbines,DiagFlowCons)	of mpvar;
-	diagSumH:	dynamic array (Cycles,Periods, Turbines,DiagHeadCons)	of mpvar;
+	diagSum:	dynamic array (Cycles,Periods, Turbines,DiagCons)	of mpvar;
 end-declarations
 
 forall (cc in Cycles) do
@@ -135,7 +131,7 @@ end-do
 forall (cc in Cycles, tt in Periods | tt<=nPeriods(cc)) do
 	create(power(cc,tt));
 	create(resHead(cc,tt));
-	create(head(cc,t));
+	create(head(cc,tt));
 end-do
 
 forall (cc in Cycles, tt in Periods | tt<=nPeriods(cc),nn in Turbines) do
@@ -152,26 +148,20 @@ end-do
 
 forall(cc in Cycles,tt in Periods|tt<=nPeriods(cc),nn in Turbines,rr in FlowBreakPoints) do
 	create(sumHWeight(cc,tt,nn,rr));
-	!sumHWeight(cc,tt,nn,rr) is_sos2;!funker dette??
 end-do
 
 forall(cc in Cycles,tt in Periods|tt<=nPeriods(cc),nn in Turbines,kk in HeadBreakPoints) do
 	create(sumQWeight(cc,tt,nn,kk));
-	!sumQWeight(cc,tt,nn,kk) is_sos2;!funker dette??
 end-do
 
-forall(cc in Cycles,tt in Periods|tt<=nPeriods(cc),nn in Turbines,ii in DiagFlowCons) do
-	create(diagSumQ(cc,tt,nn,ii));
-end-do
-
-forall(cc in Cycles,tt in Periods|tt<=nPeriods(cc),nn in Turbines,jj in DiagHeadCons) do
-	create(diagSumH(cc,tt,nn,jj));
+forall(cc in Cycles,tt in Periods|tt<=nPeriods(cc),nn in Turbines,ii in DiagCons) do
+	create(diagSum(cc,tt,nn,ii));
 end-do
 
 declarations
 	ObjValue:		linctr;
 	FlowCon:		dynamic array (Cycles, Periods, Turbines) of linctr;
-	ResHeadCon:		dynamic array (Cycles, Periods,) of linctr;
+	ResHeadCon:		dynamic array (Cycles, Periods) of linctr;
 	PowerCon:		dynamic array (Cycles, Periods) of linctr;
 	SumWeight:		dynamic array (Cycles, Periods, Turbines) of linctr;
 	HeadFlowCon:	dynamic array (Cycles, Periods) of linctr;
@@ -184,11 +174,10 @@ declarations
 	Symmetry:		dynamic array (Cycles, Periods, Turbines) of linctr;
 	SumHeadWeight:	dynamic array (Cycles, Periods, Turbines,FlowBreakPoints) of linctr;
 	SumFlowWeight:	dynamic array (Cycles, Periods, Turbines,HeadBreakPoints) of linctr;
-	SumHeadDiag:	dynamic array (Cycles, Periods, Turbines,DiagFlowCons) of linctr;
-	SumFlowDiag:	dynamic array (Cycles, Periods, Turbines,DiagHeadCons) of linctr;
-	SOS2R:			dynamic array (Cycles, Periods, Turbines,FlowBreakPoints) of linctr;
-	SOS2K			dynamic array (Cycles, Periods, Turbines,HeadBreakPoints) of linctr;
-	SOS2Diag:		dynamic array (Cycles,Periods,Turbines,DiagFlowCons,DiagHeadCons) of linctr;
+	SumDiag:		dynamic array (Cycles, Periods, Turbines,DiagCons) of linctr;
+	SOS2R:			dynamic array (Cycles, Periods, Turbines) of linctr;
+	SOS2K:			dynamic array (Cycles, Periods, Turbines) of linctr;
+	SOS2Diag:		dynamic array (Cycles,Periods,Turbines) of linctr;
 end-declarations
 
 ObjValue :=
@@ -198,27 +187,27 @@ ObjValue :=
 
 forall(cc in Cycles,tt in Periods| tt<=nPeriods(cc),nn in Turbines) do
 	FlowCon(cc,tt,nn):=
-		sum(rr in FlowBreakPoints,kk in HeadBreakPoints) Flow(rr)*weight(cc,tt,nn,rr,kk);
+		flow(cc,tt,nn)=sum(rr in FlowBreakPoints,kk in HeadBreakPoints) Flow(rr)*weight(cc,tt,nn,rr,kk);
 end-do
 
 forall(cc in Cycles, tt in Periods| tt<=nPeriods(cc)) do
 	ResHeadCon(cc,tt):=
-		sum(rr in FlowBreakPoints,kk in HeadBreakPoints,nn in Turbines) ResHead(cc,kk)*weight(cc,tt,nn,rr,kk);
+		resHead(cc,tt)=sum(rr in FlowBreakPoints,kk in HeadBreakPoints,nn in Turbines) ResHead(cc,kk)*weight(cc,tt,nn,rr,kk);
 end-do
 
 forall(cc in Cycles, tt in Periods| tt<=nPeriods(cc)) do
 	PowerCon(cc,tt):=
-		sum(rr in FlowBreakPoints,kk in HeadBreakPoints,nn in Turbines) Power(cc,rr,kk)*weight(cc,tt,nn,rr,kk);
+		power(cc,tt)=sum(rr in FlowBreakPoints,kk in HeadBreakPoints,nn in Turbines) Power(cc,rr,kk)*weight(cc,tt,nn,rr,kk);
 end-do
 
-forall(cc in Cycles,tt in Periods| tt<=nPeriods(cc), nn in Turbines)
+forall(cc in Cycles,tt in Periods| tt<=nPeriods(cc), nn in Turbines) do
 	SumWeight(cc,tt,nn):=
 		sum(rr in FlowBreakPoints,kk in HeadBreakPoints) weight(cc,tt,nn,rr,kk)=1;
 end-do
 
 forall(cc in Cycles, tt in Periods|tt>1 and tt<=nPeriods(cc)) do
 	HeadFlowCon(cc,tt):=
-		resHead(cc,tt)<=resHead(cc,(tt-1))-IsHighTide(cc)*Duration/Area*sum(i in 1..(tt-1))flow(cc,tt,nn);
+		resHead(cc,tt)<=resHead(cc,(tt-1))-IsHighTide(cc)*Duration/Area*sum(i in 1..(tt-1),nn in Turbines)flow(cc,tt,nn);
 end-do		
 
 forall(cc in Cycles, tt in Periods|tt>1 and tt<=nPeriods(cc)) do
@@ -256,41 +245,35 @@ forall(cc in Cycles,tt in Periods | tt<=nPeriods(cc),nn in Turbines|nn<nTurbines
 		flow(cc,tt,nn)-flow(cc,tt,(nn+1))>=0;
 end-do
 
-forall(cc in Cycles,tt in Periods,nn in Turbines, rr in FlowBreakPoints) do
+forall(cc in Cycles,tt in Periods| tt<=nPeriods(cc),nn in Turbines, rr in FlowBreakPoints) do
 	SumHeadWeight(cc,tt,nn,rr):=
 		sumHWeight(cc,tt,nn,rr) = sum(kk in HeadBreakPoints) weight(cc,tt,nn,rr,kk);
 end-do
 
-forall(cc in Cycles,tt in Periods,nn in Turbines, kk in HeadBreakPoints) do
+forall(cc in Cycles,tt in Periods| tt<=nPeriods(cc),nn in Turbines, kk in HeadBreakPoints) do
 	SumFlowWeight(cc,tt,nn,kk):=
-		sumQWeight(cc,tt,nn,kk) = sum(rr in FlowBreakPoints) weight(cc,tt,nn,rr,kk)
+		sumQWeight(cc,tt,nn,kk) = sum(rr in FlowBreakPoints) weight(cc,tt,nn,rr,kk);
 end-do
 
-forall(cc in Cycles,tt in Periods,nn in Turbines, ii in DiagFlowCons) do
-	SumHeadDiag(cc,tt,nn,ii):=
-		diagSumQ(cc,tt,nn,ii) = sum(rr in FlowBreakPoints) weight(cc,tt,nn,rr,(ii+rr));
+forall(cc in Cycles,tt in Periods| tt<=nPeriods(cc),nn in Turbines, ii in DiagCons) do
+	SumDiag(cc,tt,nn,ii):=
+		diagSum(cc,tt,nn,ii) = sum(rr in HeadBreakPoints|exists(weight(cc,tt,nn,rr,(ii+rr-nHeadBreakPoints))))weight(cc,tt,nn,rr,(ii+rr-nHeadBreakPoints));
 end-do
 
-forall(cc in Cycles,tt in Periods,nn in Turbines, jj in DiagHeadCons) do
-	SumFlowDiag(cc,tt,nn,jj):=
-		diagSumH(cc,tt,nn,jj) = sum(kk in HeadBreakPoints)weight(cc,tt,nn,(jj+kk),kk);
+forall(cc in Cycles, tt in Periods| tt<=nPeriods(cc), nn in Turbines) do
+	SOS2R(cc,tt,nn):=
+		sum(rr in FlowBreakPoints) rr*sumHWeight(cc,tt,nn,rr) is_sos2;
 end-do
 
-forall(cc in Cycles, tt in Periods, nn in Turbines, rr in FlowBreakPoints) do
-	SOS2R(cc,tt,nn,rr):=
-		sum(kk in HeadBreakPoints) sumHWeight(cc,tt,nn,rr) is_sos2;
+forall(cc in Cycles, tt in Periods| tt<=nPeriods(cc), nn in Turbines) do
+	SOS2K(cc,tt,nn):=
+		sum(kk in HeadBreakPoints) kk*sumQWeight(cc,tt,nn,kk) is_sos2;
 end-do
 
-forall(cc in Cycles, tt in Periods, nn in Turbines, kk in HeadBreakPoints) do
-	SOS2K(cc,tt,nn,kk):=
-		sum(rr in FlowBreakPoints) sumQWeight(cc,tt,nn,kk) is_sos2;
-end-do
-
-forall(cc in Cycles, tt in Periods, nn in Turbines) do
+forall(cc in Cycles, tt in Periods| tt<=nPeriods(cc), nn in Turbines) do
 	SOS2Diag(cc,tt,nn):=
-		sum(ii in DiagFlowCons)diagSumQ(cc,tt,nn,ii) + sum(jj in DiagHeadCons)diagSumH(cc,tt,nn,jj) is_sos2;
+		sum(ii in DiagCons)ii*diagSum(cc,tt,nn,ii) is_sos2;
 end-do
-
 
 writeln("\nModel building completed in ", timestamp - timetracker, " seconds");
 writeln("\nSolving model...");

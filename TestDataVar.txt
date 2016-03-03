@@ -1,0 +1,40 @@
+nCycles: 1
+nMaxPeriods:3
+nTurbines:1
+nFlowBreakPoints:3
+nHeadBreakPoints:2
+
+nPeriods:[
+2
+]
+
+Volume0:[
+20000
+]
+
+IsHighTide:[
+1
+]
+
+Flow:[50 80]
+Price:[40 60]
+TideHead:[10 5]
+ResHead:[8 4]
+Power:[
+700 1200
+900 1500
+1200 2000
+]
+
+KCoeff:[1 2]
+RCoeff:[3 4 0]
+
+CFD:0
+Duration: 900
+OprCost: 10
+Eta:0.9
+Rho:1003
+G:9.81
+Qmax:95
+Qmin:40
+Area:200
