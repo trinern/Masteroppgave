@@ -1,11 +1,13 @@
 nCycles: 1
-nMaxPeriods:3
+nMaxPeriods:2
 nTurbines:1
-nFlowBreakPoints:3
+nFlowBreakPoints:2
 nHeadBreakPoints:2
+nScenarios: 1
+nScenariosDA:1
 
 nPeriods:[
-2
+1
 ]
 
 Volume0:[
@@ -16,18 +18,17 @@ IsHighTide:[
 1
 ]
 
-Flow:[50 80]
-Price:[40 60]
-TideHead:[10 5]
+Flow:[50 90]
+PriceDA:[40 60]
+PriceRT:[45 55]
+TideHead:[10]
 ResHead:[8 4]
 Power:[
 700 1200
 900 1500
-1200 2000
 ]
-
-KCoeff:[1 2]
-RCoeff:[3 4 0]
+Prob:[1]
+ScenMap:[1 1]
 
 CFD:0
 Duration: 900
@@ -38,3 +39,4 @@ G:9.81
 Qmax:95
 Qmin:40
 Area:200
+Factor_Period: 0.25
