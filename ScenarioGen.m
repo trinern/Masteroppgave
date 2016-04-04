@@ -20,24 +20,44 @@ Periods=importPeriodsPerCycle();
 Years=4;
 Days=365;
 MaxPeriods=26; %check this
+M=12;
+DaysMonth=30;
 
 %declaration of matrices
 DAscenarios=zeros(Scenarios, MaxPeriods, Cycles);
 IDscenarios=zeros(Scenarios, MaxPeriods, Cycles);
 
+%%%No seasonality%%%
+% %fill scenario matrices with sampled values
+% for s=1:Scenarios 
+%     for c=1:Cycles
+%         %r=get_season(c);
+%         y=randi(Years); %random year for each cycle
+%         d=randi(Days);%random day in a season
+%         p=1;
+%         while p<Periods(c)%writes elem in the Xpress order
+%             hh=get_hour(TimeExtremePoints(c),p);%finds half hour in a day corresponding to c,p
+%             DAscenarios(s,p,c)=DAprice(y,d,hh);
+%             IDscenarios(s,p,c)=IDprice(y,d,hh);
+%             p=p+1;     
+%         end
+%     end
+% end
+
+%%%With seasonality%%%
 %fill scenario matrices with sampled values
-for s=1:Scenarios 
-    for c=1:Cycles
-        %r=get_season(c);
-        y=randi(Years); %random year for each cycle
-        d=randi(Days);%random day in a season
-        p=1;
-        while p<Periods(c)%writes elem in the Xpress order
-            hh=get_hour(TimeExtremePoints(c),p);%finds half hour in a day corresponding to c,p
+for c=1:Cycles
+    [Dmin, Dmax]=get_month(TimeExtremePoints(c));%first and last day in cycle's month
+    y=randi(Years); %random year for each cycle
+    d=randi([Dmin,Dmax]);%random day in the cycle's month 
+    p=1;
+    while p<=Periods(c)%writes elem in the Xpress order
+        hh=get_hour(TimeExtremePoints(c),p);%finds half hour in a day corresponding to c,p
+        for s=1:Scenarios
             DAscenarios(s,p,c)=DAprice(y,d,hh);
-            IDscenarios(s,p,c)=IDprice(y,d,hh);
-            p=p+1;     
+            IDscenarios(s,p,c)=IDprice(y,d,hh);     
         end
+        p=p+1;
     end
 end
 

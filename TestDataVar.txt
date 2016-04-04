@@ -32,6 +32,7 @@ OprCost: 10
 Eta:0.9
 Rho:1025
 G:9.81
+Pi: 3.14159
 Qmax:110
 Qmin:39
 Area:150000
@@ -40,6 +41,7 @@ TurbineD: 11.1488
 PowerFactor: 1000000
 MaxPower: 300000
 TurbineCost: 10
+
 
 nPeriods: [
 24.000000 25.000000 26.000000 25.000000 24.000000

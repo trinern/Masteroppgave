@@ -1,15 +1,15 @@
-%Script generating DA_seasonprices(Year, Season, Day, Hour) and 
-%ID_seasonprices(Year, Season, Day, Hour)
+%Script generating DA_price(Year, Day, HalfHour) and 
+%ID_price(Year, Day, HalfHour)
 
 Years=4;
 Hours=24;
 Days=365;
+HH=48;
 
 %import all Spotprices (RPD) and day-ahead prives from Raw Data, change the 
 %names to ID12/13/14/15 and DA12/13/14/15
 
 %Raw data spec
-HH=48;
 Hstart=2;
 
 IDprice=zeros(Years, Days, HH);
@@ -47,16 +47,53 @@ for d=1:Days
         DAprice(4,d,hh)=DA15(d,h);
     end  
 end
-% 
-% %write to file
-% DAfile=fopen('DAprice.txt', 'w');
-% IDfile=fopen('IDprice.txt', 'w');
-% fprintf(DAfile, '%10f', DAprice);
-% fprintf(IDfile, '%10f', IDprice);
-% 
-% fclose('all');
 
-%time=zeros(Days,HH);
+% %calculating avg monthly prices
+% Mduration=[31 28 31 30 31 30 31 31 30 31 30 31];
+% Mstart=zeros(12,1);
+% Mstart(1)=1;
+% 
+% for m=2:12
+%     Mstart(m)=Mstart(m-1)+Mduration(m-1);
+% end
+
+% DAsum=zeros(12,1);
+% IDsum=zeros(12,1);
+% 
+% for m=1:12
+%     for y=1:Years   
+%         for d=0:(Mduration(m)-1)
+%             for hh=1:48
+%                 DAsum(m)=DAsum(m)+DAprice(y,Mstart(m)+d,hh);
+%                 IDsum(m)=IDsum(m)+IDprice(y,Mstart(m)+d,hh);
+%             end
+%         end
+%     end
+% end
+% 
+% AvgDA=zeros(12,1);
+% AvgID=zeros(12,1);
+% 
+% for m=1:12
+%     t=HH*Mduration(m)*Years;
+%     AvgDA(m)=DAsum(m)/t;
+%     AvgID(m)=IDsum(m)/t;
+% end
+% M=1:12;
+% figure(10)
+% plot(M,AvgDA,M,AvgID)
+
+
+%
+%write to file
+DAfile=fopen('DAprice.txt', 'w');
+IDfile=fopen('IDprice.txt', 'w');
+fprintf(DAfile, '%10f', DAprice);
+fprintf(IDfile, '%10f', IDprice);
+
+fclose('all');
+
+% time=zeros(Days,HH);
 % t=0;
 % 
 % figure(1)
@@ -96,32 +133,3 @@ end
 %     end
 % end
 % hold off
-
-%generating DA prices
-
-
-% %Season spec
-% Seasons=3;
-% DaysInSeason=[0 90 90 180];
-% Dmin=[1 91 181]
-% Dmax=zeros(Seasons,1);
-% for s=1:Seasons-1
-%     Dmin(s)=1+(DaysInSeason(s-1)-1);
-%     Dmax(s)=Dmin(s+1)+1;
-% end
-% 
-% %Declaration
-% %DA_seasonprices=zeros(Years, Seasons, Days, HH);
-% ID_seasonprices=zeros(Years, Seasons, Days, HH);
-% 
-% %generating price matrices ordered after season
-% for y=1:Years
-%     for s=1:Seasons
-%         for d=1:
-%             for h=1:Hours
-%                 %DA_seasonprices(y,s,d,h)=ID;
-%                 ID_seasonprices(y,s,d,h)=IDtemp(y,d;
-%             end
-%         end
-%     end
-% end

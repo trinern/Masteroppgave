@@ -81,6 +81,7 @@ declarations
 	Power:		array(Cycles, Periods, FlowBreakPoints, HeadBreakPoints )	of real;
 	Prob:		array(Scenarios)	of real;
 	StartH:		array(Cycles)	of real;
+	!TideHead:	array(Cycles, Periods)	of real;
 end-declarations
 
 initializations from TestFile
@@ -93,14 +94,15 @@ initializations from TestFile
 	Power;
 	Prob;
 	StartH;
+	!TideHead;
 end-initializations
 
 !Constants
 declarations
-	CFD:		integer;
+	!CFD:		integer;
 	Duration:	integer;
 	OprCost:	integer;
-	Eta:		real;
+	!Eta:		real;
 	Rho:		integer;
 	G:			real;
 	Qmax:		integer;
@@ -110,14 +112,15 @@ declarations
 	TurbineD:	real;
 	PowerFactor:integer;
 	MaxPower:	integer;
-	TurbineCost:integer;
+	Pi:			real;
+	!TurbineCost:integer;
 end-declarations
 	
 initializations from TestFile
-	CFD;
+	!CFD;
 	Duration;
 	OprCost;
-	Eta;
+	!Eta;
 	Rho;
 	G;
 	Qmax;
@@ -127,7 +130,8 @@ initializations from TestFile
 	TurbineD;
 	PowerFactor;
 	MaxPower;
-	TurbineCost;
+	!TurbineCost;
+	Pi;
 end-initializations
 
 !Variables
@@ -146,7 +150,7 @@ declarations
 	sumQWeight: dynamic array (Cycles,Periods, Turbines,Scenarios,HeadBreakPoints)	of mpvar;
 	diagSum:	dynamic array (Cycles,Periods, Turbines,Scenarios,DiagCons)	of mpvar;
 	!!!Turbine opt!!!
-	builtTurbine:dynamic array (Turbines) of mpvar;
+	!builtTurbine:dynamic array (Turbines) of mpvar;
 end-declarations
 
 forall (cc in Cycles, ss in Scenarios) do
@@ -188,12 +192,6 @@ forall(cc in Cycles,tt in Periods|tt<=nPeriods(cc),nn in Turbines, ss in Scenari
 	create(diagSum(cc,tt,nn,ss,ii));
 end-do
 
-!!TurbineOpt!!
-forall(nn in Turbines) do
-	create(builtTurbine(nn));
-	builtTurbine(nn) is_binary;
-end-do
-
 declarations
 	ObjValue:		linctr;
 	FlowCon:		dynamic array (Cycles, Periods, Turbines, Scenarios) of linctr;
@@ -204,7 +202,7 @@ declarations
 	SalesLimDA:		dynamic array (Cycles, Periods, Scenarios) of linctr;
 	SumWeight:		dynamic array (Cycles, Periods, Turbines, Scenarios) of linctr;
 	HeadFlowCon:	dynamic array (Cycles, Periods, Scenarios) of linctr;
-	FeasibleGrid:	dynamic array (Cycles, Periods, Turbines, Scenarios, FlowBreakPoints, HeadBreakPoints) of linctr;
+	FeasibleGrid:	dynamic array (Cycles, Periods, Turbines, Scenarios) of linctr;
 	HeadCon:		dynamic array (Cycles, Periods, Scenarios) of linctr;
 	TotalFlow:		dynamic array (Cycles, Scenarios) of linctr;
 	MaxFlow:		dynamic array (Cycles, Periods, Turbines, Scenarios) of linctr;
@@ -217,7 +215,7 @@ declarations
 	SOS2R:			dynamic array (Cycles, Periods, Turbines, Scenarios) of linctr;
 	SOS2K:			dynamic array (Cycles, Periods, Turbines, Scenarios) of linctr;
 	SOS2Diag:		dynamic array (Cycles, Periods, Turbines, Scenarios) of linctr;
-	MaxPowerCon:	dynamic array (Cycles, Periods, Turbines, Scenarios) of linctr;
+	!MaxPowerCon:	dynamic array (Cycles, Periods, Turbines, Scenarios) of linctr;
 end-declarations
 
 ObjValue :=
@@ -225,14 +223,18 @@ ObjValue :=
 		sum(cc in Cycles,tt in Periods| tt<=nPeriods(cc))(PriceDA(cc,tt,ss)*soldDA(cc,tt,ss)+PriceRT(cc,tt,ss)*soldRT(cc,tt,ss))
 		-
 		sum(cc in Cycles,tt in Periods| tt<=nPeriods(cc),nn in Turbines) OprCost*starting(cc,tt,nn,ss)
-		-
-		sum(nn in Turbines) TurbineCost*builtTurbine(nn)
 		);
 
 forall(cc in Cycles,tt in Periods| tt<=nPeriods(cc),nn in Turbines,ss in Scenarios) do
 	FlowCon(cc,tt,nn,ss):=
 		flow(cc,tt,nn,ss)=sum(rr in FlowBreakPoints,kk in HeadBreakPoints) Flow(rr)*weight(cc,tt,nn,ss,rr,kk);
 end-do
+!Problem: variabel i kvadratrottegn
+(!forall(cc in Cycles,tt in Periods| tt<=nPeriods(cc),nn in Turbines,ss in Scenarios) do
+	FeasibleGrid(cc,tt,nn,ss):=
+		flow(cc,tt,nn,ss)<= Pi/4*TurbineD*sqrt(2*G*sum(rr in FlowBreakPoints,kk in HeadBreakPoints)
+		IsHighTide(cc)*(ResHead(cc,kk)*weight(cc,tt,nn,ss,rr,kk)-TideHead(cc,tt)));
+end-do!)
 
 forall(cc in Cycles, tt in Periods| tt<=nPeriods(cc), nn in Turbines,ss in Scenarios) do
 	ResHeadCon(cc,tt,nn,ss):=
@@ -254,14 +256,15 @@ forall(cc in Cycles, tt in Periods| tt<=nPeriods(cc),ss in Scenarios) do
 		soldDA(cc,tt,ss) + soldRT(cc,tt,ss) <= sum(nn in Turbines)power(cc,tt,nn,ss)*Factor_Period/PowerFactor;
 end-do
 
+!Fjerne grense på DA salg?
 forall(cc in Cycles, tt in Periods| tt<=nPeriods(cc),ss in Scenarios) do
 	SalesLimDA(cc,tt,ss):=
-		soldDA(cc,tt,ss)<= sum(nn in Turbines)builtTurbine(nn)*MaxPower*Factor_Period/PowerFactor;
+		soldDA(cc,tt,ss)<= nTurbines*MaxPower*Factor_Period/PowerFactor;
 end-do
 
 forall(cc in Cycles,tt in Periods| tt<=nPeriods(cc), nn in Turbines,ss in Scenarios) do
 	SumWeight(cc,tt,nn,ss):=
-		sum(rr in FlowBreakPoints,kk in HeadBreakPoints) weight(cc,tt,nn,ss,rr,kk)=1;
+		sum(rr in FlowBreakPoints,kk in HeadBreakPoints) weight(cc,tt,nn,ss,rr,kk)=running(cc,tt,nn,ss);
 end-do
 
 forall(cc in Cycles, tt in Periods|tt>1 and tt<=nPeriods(cc),ss in Scenarios) do
@@ -273,12 +276,6 @@ forall(cc in Cycles, ss in Scenarios) do
 	HeadFlowCon(cc,1,ss):=
 		resHead(cc,1,ss)=StartH(cc);
 end-do		
-
-(!forall(cc in Cycles,tt in Periods|tt<=nPeriods(cc),nn in Turbines, ss in Scenarios, rr in FlowBreakPoints,kk in HeadBreakPoints) do
-	FeasibleGrid(cc,tt,nn,ss,rr,kk):=
-		flow(cc,tt,nn,ss)<=3.14/4*sqrt(2*G*resHeadTurbine(cc,tt,nn,ss))*TurbineD;!flow restriction depending on height
-end-do!)
-		
 
 forall(cc in Cycles,ss in Scenarios) do! total flow <=Volume0 for sylindrical reservoir
 	TotalFlow(cc,ss):=
@@ -338,12 +335,6 @@ end-do
 forall(cc in Cycles, tt in Periods| tt<=nPeriods(cc), nn in Turbines,ss in Scenarios) do
 	SOS2Diag(cc,tt,nn,ss):=
 		sum(ii in DiagCons)ii*diagSum(cc,tt,nn,ss,ii) is_sos2;
-end-do
-
-!!TurbineOpt
-forall(cc in Cycles, tt in Periods| tt<=nPeriods(cc), nn in Turbines,ss in Scenarios) do
-	MaxPowerCon(cc,tt,nn,ss):=
-		power(cc,tt,nn,ss)<=builtTurbine(nn)*MaxPower;
 end-do
 
 writeln("\nModel building completed in ", timestamp - timetracker, " seconds");
