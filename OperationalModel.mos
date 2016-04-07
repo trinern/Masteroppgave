@@ -4,7 +4,28 @@ uses "mmxprs"; !gain access to the Xpress-Optimizer solver
 options explterm, noimplicit;
 
 parameters
-	TestFile = 'TestDataVar.txt';
+	!input values
+	nScenarios = 2;
+	nTurbines = 1;
+	nCycles = 3;
+	DiagCon = 'True';
+	DelWeight = 'True';
+	
+	OutFile = "results\\test_C" + nCycles + "_T" + nTurbines 
+			+ "_S" + nScenarios + "_Diag" + DiagCon + "_DelW" + DelWeight; !Output file 
+	
+	!data files
+	InFolder = "data\\";
+	
+	Data_file = InFolder + 'Data.txt';
+	Price_file = InFolder + 'Price.txt';
+	Cycle_file = InFolder + 'Cycle_Data.txt';
+	!StartH_file = InFolder + 'Start_height.txt';
+	!Flow_file = InFolder + 'Flow.txt';
+	!Power_file = InFolder + 'Power.txt';
+	!ResHead_file = InFolder + 'Reservoir_height.txt';
+	!Period_file = InFolder + 'Periods.txt';
+	
 	original = true;
 	SOSimplementation = false;	
 	Presolve = true;
@@ -23,22 +44,22 @@ timetracker := timestamp; ! assigns current "timestamp" to timetracker
 
 !Declarations of sets
 declarations
-	nCycles:			integer;
+	!nCycles:			integer;
 	nMaxPeriods:		integer;
-	nTurbines:			integer;
+	!nTurbines:			integer;
 	nFlowBreakPoints:	integer;
 	nHeadBreakPoints:	integer;
-	nScenarios:			integer;
+	!nScenarios:			integer;
 	!nScenariosDA:		integer;
 end-declarations
 	
-initializations from TestFile
-	nCycles;
+initializations from Data_file
+	!nCycles;
 	nMaxPeriods;
-	nTurbines;
+	!nTurbines;
 	nFlowBreakPoints;
 	nHeadBreakPoints;
-	nScenarios;
+	!nScenarios;
 	!nScenariosDA;
 end-initializations
 	
@@ -73,28 +94,29 @@ finalize(Scenarios);
 !Matlab generated matrices must be written in the form (dim3, dim2, dim1) for proper reading	
 declarations
 	nPeriods:	array(Cycles)			of real;	!number of production Periods in cycle c
-	IsHighTide:	array(Cycles)			of integer;	!=1 if cycle starts in high tide, -1 otherwise
 	Flow:		array(FlowBreakPoints)	of real;!Flow in break point r
 	PriceDA:	array(Cycles,Periods,Scenarios)	of real;	!power price
 	PriceRT:	array(Cycles,Periods,Scenarios)	of real;	!power price
-	ResHead:	array(Cycles,HeadBreakPoints) of real;!Reservoir head in break point k
+	ResHead:	array(Cycles,Periods,HeadBreakPoints) of real;!Reservoir head in break point k
 	Power:		array(Cycles, Periods, FlowBreakPoints, HeadBreakPoints )	of real;
 	Prob:		array(Scenarios)	of real;
 	StartH:		array(Cycles)	of real;
 	!TideHead:	array(Cycles, Periods)	of real;
 end-declarations
 
-initializations from TestFile
-	nPeriods;
-	IsHighTide;
-	Flow;
-	PriceDA;	
-	PriceRT;	
-	ResHead;
-	Power;
+initializations from Data_file
 	Prob;
+end-initializations
+initializations from Price_file
+	PriceDA;
+	PriceRT;
+end-initializations
+initializations from Cycle_file
 	StartH;
-	!TideHead;
+	Flow;
+	Power;
+	ResHead;
+	nPeriods;
 end-initializations
 
 !Constants
@@ -109,14 +131,14 @@ declarations
 	Qmin:		integer;
 	Area:		real;
 	Factor_Period: real;
-	TurbineD:	real;
+	!TurbineD:	real;
 	PowerFactor:integer;
 	MaxPower:	integer;
 	Pi:			real;
 	!TurbineCost:integer;
 end-declarations
 	
-initializations from TestFile
+initializations from Data_file
 	!CFD;
 	Duration;
 	OprCost;
@@ -127,7 +149,7 @@ initializations from TestFile
 	Qmin;
 	Area;
 	Factor_Period;
-	TurbineD;
+	!TurbineD;
 	PowerFactor;
 	MaxPower;
 	!TurbineCost;
@@ -137,7 +159,7 @@ end-initializations
 !Variables
 declarations	
 	spill:		dynamic array (Cycles,Scenarios) of mpvar;
-	soldDA:		dynamic array(Cycles, Periods, Scenarios) of mpvar;
+	soldDA:		dynamic array(Cycles, Periods) of mpvar;
 	soldRT:		dynamic array(Cycles, Periods, Scenarios) of mpvar;
 	power: 		dynamic array (Cycles,Periods,Turbines,Scenarios) of mpvar;
 	resHeadTurbine:	dynamic array (Cycles,Periods,Turbines,Scenarios)	of mpvar;!turbine specific resHead
@@ -157,10 +179,12 @@ forall (cc in Cycles, ss in Scenarios) do
 	create(spill(cc,ss));
 end-do
 
+forall(cc in Cycles, tt in Periods | tt<=nPeriods(cc)) do
+	create(soldDA(cc,tt));
+end-do
+
 forall (cc in Cycles, tt in Periods | tt<=nPeriods(cc), ss in Scenarios) do
 	create(resHead(cc,tt,ss));
-	!create(head(cc,tt,ss));
-	create(soldDA(cc,tt,ss));
 	create(soldRT(cc,tt,ss));
 	resHead(cc,tt,ss) is_free;
 end-do
@@ -176,7 +200,7 @@ forall (cc in Cycles, tt in Periods | tt<=nPeriods(cc),nn in Turbines, ss in Sce
 	running(cc,tt,nn,ss) is_binary;
 end-do
 
-forall (cc in Cycles,tt in Periods|tt<=nPeriods(cc),nn in Turbines, ss in Scenarios, rr in FlowBreakPoints,kk in HeadBreakPoints) do
+forall (cc in Cycles,tt in Periods|tt<=nPeriods(cc),nn in Turbines, ss in Scenarios, rr in FlowBreakPoints,kk in HeadBreakPoints|Power(cc,tt,rr,kk)>=0) do
 	create(weight(cc,tt,nn,ss,rr,kk));	
 end-do
 
@@ -202,7 +226,7 @@ declarations
 	SalesLimDA:		dynamic array (Cycles, Periods, Scenarios) of linctr;
 	SumWeight:		dynamic array (Cycles, Periods, Turbines, Scenarios) of linctr;
 	HeadFlowCon:	dynamic array (Cycles, Periods, Scenarios) of linctr;
-	FeasibleGrid:	dynamic array (Cycles, Periods, Turbines, Scenarios) of linctr;
+	!FeasibleGrid:	dynamic array (Cycles, Periods, Turbines, Scenarios) of linctr;
 	HeadCon:		dynamic array (Cycles, Periods, Scenarios) of linctr;
 	TotalFlow:		dynamic array (Cycles, Scenarios) of linctr;
 	MaxFlow:		dynamic array (Cycles, Periods, Turbines, Scenarios) of linctr;
@@ -220,7 +244,7 @@ end-declarations
 
 ObjValue :=
 	sum(ss in Scenarios)Prob(ss)*(
-		sum(cc in Cycles,tt in Periods| tt<=nPeriods(cc))(PriceDA(cc,tt,ss)*soldDA(cc,tt,ss)+PriceRT(cc,tt,ss)*soldRT(cc,tt,ss))
+		sum(cc in Cycles,tt in Periods| tt<=nPeriods(cc))(PriceDA(cc,tt,ss)*soldDA(cc,tt)+PriceRT(cc,tt,ss)*soldRT(cc,tt,ss))
 		-
 		sum(cc in Cycles,tt in Periods| tt<=nPeriods(cc),nn in Turbines) OprCost*starting(cc,tt,nn,ss)
 		);
@@ -229,16 +253,10 @@ forall(cc in Cycles,tt in Periods| tt<=nPeriods(cc),nn in Turbines,ss in Scenari
 	FlowCon(cc,tt,nn,ss):=
 		flow(cc,tt,nn,ss)=sum(rr in FlowBreakPoints,kk in HeadBreakPoints) Flow(rr)*weight(cc,tt,nn,ss,rr,kk);
 end-do
-!Problem: variabel i kvadratrottegn
-(!forall(cc in Cycles,tt in Periods| tt<=nPeriods(cc),nn in Turbines,ss in Scenarios) do
-	FeasibleGrid(cc,tt,nn,ss):=
-		flow(cc,tt,nn,ss)<= Pi/4*TurbineD*sqrt(2*G*sum(rr in FlowBreakPoints,kk in HeadBreakPoints)
-		IsHighTide(cc)*(ResHead(cc,kk)*weight(cc,tt,nn,ss,rr,kk)-TideHead(cc,tt)));
-end-do!)
 
 forall(cc in Cycles, tt in Periods| tt<=nPeriods(cc), nn in Turbines,ss in Scenarios) do
 	ResHeadCon(cc,tt,nn,ss):=
-		resHeadTurbine(cc,tt,nn,ss)=sum(rr in FlowBreakPoints,kk in HeadBreakPoints) ResHead(cc,kk)*weight(cc,tt,nn,ss,rr,kk);
+		resHeadTurbine(cc,tt,nn,ss)=sum(rr in FlowBreakPoints,kk in HeadBreakPoints) ResHead(cc,tt,kk)*weight(cc,tt,nn,ss,rr,kk);
 end-do
 
 forall(cc in Cycles, tt in Periods| tt<=nPeriods(cc), nn in Turbines,ss in Scenarios) do
@@ -253,24 +271,23 @@ end-do
 
 forall(cc in Cycles, tt in Periods| tt<=nPeriods(cc),ss in Scenarios) do
 	ProdSalesBal(cc,tt,ss):=
-		soldDA(cc,tt,ss) + soldRT(cc,tt,ss) <= sum(nn in Turbines)power(cc,tt,nn,ss)*Factor_Period/PowerFactor;
-end-do
-
-!Fjerne grense på DA salg?
-forall(cc in Cycles, tt in Periods| tt<=nPeriods(cc),ss in Scenarios) do
-	SalesLimDA(cc,tt,ss):=
-		soldDA(cc,tt,ss)<= nTurbines*MaxPower*Factor_Period/PowerFactor;
+		soldDA(cc,tt) + soldRT(cc,tt,ss) <= sum(nn in Turbines)power(cc,tt,nn,ss)*Factor_Period/PowerFactor;
 end-do
 
 forall(cc in Cycles,tt in Periods| tt<=nPeriods(cc), nn in Turbines,ss in Scenarios) do
 	SumWeight(cc,tt,nn,ss):=
-		sum(rr in FlowBreakPoints,kk in HeadBreakPoints) weight(cc,tt,nn,ss,rr,kk)=running(cc,tt,nn,ss);
+		sum(rr in FlowBreakPoints,kk in HeadBreakPoints) weight(cc,tt,nn,ss,rr,kk)=1;!or=running(cc,tt,nn,ss) if not zero break points
 end-do
 
 forall(cc in Cycles, tt in Periods|tt>1 and tt<=nPeriods(cc),ss in Scenarios) do
-	HeadFlowCon(cc,tt,ss):=
-		resHead(cc,tt,ss)=resHead(cc,(tt-1),ss)-IsHighTide(cc)*Duration/Area*sum(i in 1..(tt-1),nn in Turbines)flow(cc,tt,nn,ss);
-end-do	
+	if StartH(cc)<0 then 
+		HeadFlowCon(cc,tt,ss):=
+			resHead(cc,tt,ss)>=StartH(cc)+Duration/Area*sum(i in 1..(tt-1),nn in Turbines)flow(cc,tt,nn,ss);
+	else 
+		HeadFlowCon(cc,tt,ss):=
+			resHead(cc,tt,ss)<=StartH(cc)-Duration/Area*sum(i in 1..(tt-1),nn in Turbines)flow(cc,tt,nn,ss);		
+	end-if
+end-do
 
 forall(cc in Cycles, ss in Scenarios) do
 	HeadFlowCon(cc,1,ss):=
@@ -278,8 +295,13 @@ forall(cc in Cycles, ss in Scenarios) do
 end-do		
 
 forall(cc in Cycles,ss in Scenarios) do! total flow <=Volume0 for sylindrical reservoir
-	TotalFlow(cc,ss):=
-		sum(tt in Periods,nn in Turbines)flow(cc,tt,nn,ss)+ spill(cc,ss)= 2*IsHighTide(cc)*StartH(cc)*Area;
+	if StartH(cc)<0 then
+		TotalFlow(cc,ss):=
+			sum(tt in Periods,nn in Turbines)flow(cc,tt,nn,ss)+ spill(cc,ss)= -2*StartH(cc)*Area;
+	else
+		TotalFlow(cc,ss):=
+			sum(tt in Periods,nn in Turbines)flow(cc,tt,nn,ss)+ spill(cc,ss)= +2*StartH(cc)*Area;
+	end-if				
 end-do
 
 forall(cc in Cycles,tt in Periods | tt<=nPeriods(cc),nn in Turbines,ss in Scenarios) do
@@ -320,7 +342,7 @@ end-do
 forall(cc in Cycles,tt in Periods| tt<=nPeriods(cc),nn in Turbines,ss in Scenarios, ii in DiagCons) do
 	SumDiag(cc,tt,nn,ss,ii):=
 		diagSum(cc,tt,nn,ss,ii) = sum(rr in HeadBreakPoints|exists(weight(cc,tt,nn,ss,rr,(ii+rr-nHeadBreakPoints))))weight(cc,tt,nn,ss,rr,(ii+rr-nHeadBreakPoints));
-end-do
+end-do!)
 
 forall(cc in Cycles, tt in Periods| tt<=nPeriods(cc), nn in Turbines,ss in Scenarios) do
 	SOS2R(cc,tt,nn,ss):=
@@ -335,7 +357,7 @@ end-do
 forall(cc in Cycles, tt in Periods| tt<=nPeriods(cc), nn in Turbines,ss in Scenarios) do
 	SOS2Diag(cc,tt,nn,ss):=
 		sum(ii in DiagCons)ii*diagSum(cc,tt,nn,ss,ii) is_sos2;
-end-do
+end-do!)
 
 writeln("\nModel building completed in ", timestamp - timetracker, " seconds");
 writeln("\nSolving model...");
@@ -349,3 +371,29 @@ maximize(ObjValue);
 
 writeln("\nModel solved in ", timestamp - timetracker," seconds");
 writeln("Status: " + status(getprobstat));
+
+!write to file
+
+fopen(OutFile + ".txt", F_OUTPUT);
+writeln("Scenarios: ", nScenarios);
+writeln("Turbines: ", nTurbines);
+writeln("Cycles: ", nCycles);
+writeln("DiagCons: ", DiagCon);
+writeln("DeletedWeightingVar: ", DelWeight);
+writeln("-------------------------------------");
+writeln("Status: ", + status(getprobstat));
+writeln("-------------------------------------");
+writeln("Profit = ", getobjval);
+writeln("-------------------------------------");
+!write power and sales in each cycle and period
+forall(ss in Scenarios) do
+	writeln("Scenario: ", ss);
+	writeln("Cycle	Period	Power		DA_sales	RT_sales	DA_price	RT_price");
+		forall(cc in Cycles, tt in Periods| tt<=nPeriods(cc)) do
+			writeln(cc,"	",tt,"	",sum(nn in Turbines)getsol(power(cc,tt,nn,ss)),
+			"		",getsol(soldDA(cc,tt)),"		",getsol(soldRT(cc,tt,ss)),"		",PriceDA(cc,tt,ss),"		",PriceRT(cc,tt,ss));
+		end-do
+end-do
+
+	
+fclose(F_OUTPUT);

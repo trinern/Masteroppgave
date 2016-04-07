@@ -48,16 +48,16 @@ IDscenarios=zeros(Scenarios, MaxPeriods, Cycles);
 %fill scenario matrices with sampled values
 for c=1:Cycles
     [Dmin, Dmax]=get_month(TimeExtremePoints(c));%first and last day in cycle's month
-    y=randi(Years); %random year for each cycle
-    d=randi([Dmin,Dmax]);%random day in the cycle's month 
-    p=1;
-    while p<=Periods(c)%writes elem in the Xpress order
-        hh=get_hour(TimeExtremePoints(c),p);%finds half hour in a day corresponding to c,p
-        for s=1:Scenarios
+    for s=1:Scenarios
+        y=randi(Years); %random year for each cycle
+        d=randi([Dmin,Dmax]);%random day in the cycle's month 
+        p=1;
+        while p<=Periods(c)%writes elem in the Xpress order
+            hh=get_hour(TimeExtremePoints(c),p);%finds half hour in a day corresponding to c,p       
             DAscenarios(s,p,c)=DAprice(y,d,hh);
-            IDscenarios(s,p,c)=IDprice(y,d,hh);     
+            IDscenarios(s,p,c)=IDprice(y,d,hh); 
+            p=p+1;
         end
-        p=p+1;
     end
 end
 
