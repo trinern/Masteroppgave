@@ -6,12 +6,12 @@
 % amplitude [cm]: amplitude of tide cycle component, given location
 % phase [Degrees]: phase shift of tide cycle component, given location
 
-function tideCycle = get_tide_cycle(timeDiscretisation,horizon,H0,componentMatrix)
+function tideCycle = get_tide_cycle2(timeDiscretisation,horizon,H0,componentMatrix)
 
 nComponents=length(componentMatrix);
  nSteps=(horizon*24*60)/timeDiscretisation; %number of periods in horizon
  t=zeros(1,nSteps); %vector of periods
- componentMatrix(:,1)= componentMatrix(:,1).*(60*60);
+ componentMatrix(:,1)= componentMatrix(:,1)./(60*60);
 % componentMatrix(:,2)= componentMatrix(:,2).*(1/100); use if original data in cm
 
  %create discrete time vector
@@ -19,7 +19,7 @@ for i=1:nSteps
     t(i+1)=t(i)+(timeDiscretisation*60); %Note: last period not included
 end
  
-    frequency=(1./componentMatrix(:,1))*360; %frequency given by period in degrees/s
+   % frequency=(1./componentMatrix(:,1))*360; %frequency given by period in degrees/s
     
     %pre-define matrixes
    % Period=nan(nComponents,length(t));
@@ -28,22 +28,13 @@ end
 
     %calculations of tide-components
     for i=1:nComponents
-        comp(i,:)=componentMatrix(i,2).*cosd(t.*frequency(i)+ componentMatrix(i,4)-componentMatrix(i,3)+133);
-    
+        comp(i,:)=componentMatrix(i,2).*cosd(t.*componentMatrix(i,1)+ componentMatrix(i,4)-componentMatrix(i,3)+200);
     end
-    
-    cos_faktor=0.90+0.10*cosd(t/3550 +80);
 
-H=(H0+sum(comp)); %tide level as function of time
-tideCycle=cos_faktor.*(H0+sum(comp));
+H=H0+sum(comp); %tide level as function of time
+tideCycle=H;
 
  t=t./(60*60*24); %converts time vector to days
  
  figure(1)
  plot(t,H);
- hold on
- plot(t,cos_faktor);
- 
- figure(2)
- plot(t,tideCycle);
- 
