@@ -1,7 +1,7 @@
 function [ halfHour ] = get_hour( T0_cycle, period )
 %converts a specified cycle and period into a specific half hour during a day
 
-T=15;
+T=30;
 HHPerDay=48;
 MinPerHH=30;
 

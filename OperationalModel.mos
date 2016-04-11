@@ -10,21 +10,19 @@ parameters
 	nCycles = 3;
 	DiagCon = 'True';
 	DelWeight = 'True';
+	! Time limit for runtime,  maximum number of seconds for optimisation
+	MaxTime = 7200; !2 h
+	MaxGap = 0.05; !Dual Gap for interruption of optimisation, in percent
 	
 	OutFile = "results\\test_C" + nCycles + "_T" + nTurbines 
-			+ "_S" + nScenarios + "_Diag" + DiagCon + "_DelW" + DelWeight; !Output file 
+			+ "_S" + nScenarios + "_MaxT" + MaxTime + "_MaxGap" + MaxGap;!+ "_Diag" + DiagCon + "_DelW" + DelWeight; !Output file 
 	
 	!data files
 	InFolder = "data\\";
 	
 	Data_file = InFolder + 'Data.txt';
-	Price_file = InFolder + 'Price.txt';
-	Cycle_file = InFolder + 'Cycle_Data.txt';
-	!StartH_file = InFolder + 'Start_height.txt';
-	!Flow_file = InFolder + 'Flow.txt';
-	!Power_file = InFolder + 'Power.txt';
-	!ResHead_file = InFolder + 'Reservoir_height.txt';
-	!Period_file = InFolder + 'Periods.txt';
+	Price_file = InFolder + 'Price' + nCycles + '.txt';
+	Cycle_file = InFolder + 'Cycle_Data' + nCycles + '.txt';
 	
 	original = true;
 	SOSimplementation = false;	
@@ -33,6 +31,14 @@ parameters
 	Cutting = 'Yes';
 	Print = 'True';
 end-parameters
+
+if(MaxTime>0.0) then
+	setparam("XPRS_maxtime", MaxTime);
+end-if
+
+if(MaxGap>0.0) then
+	setparam("XPRS_miprelstop", MaxGap);
+end-if
 
 declarations
 	status:array({XPRS_OPT,XPRS_UNF,XPRS_INF,XPRS_UNB,XPRS_OTH}) of string;!for status of given solution
@@ -124,36 +130,30 @@ declarations
 	!CFD:		integer;
 	Duration:	integer;
 	OprCost:	integer;
-	!Eta:		real;
 	Rho:		integer;
 	G:			real;
 	Qmax:		integer;
 	Qmin:		integer;
 	Area:		real;
 	Factor_Period: real;
-	!TurbineD:	real;
 	PowerFactor:integer;
-	MaxPower:	integer;
-	Pi:			real;
-	!TurbineCost:integer;
+	!MaxPower:	integer;
+	!Pi:			real;
 end-declarations
 	
 initializations from Data_file
 	!CFD;
 	Duration;
 	OprCost;
-	!Eta;
 	Rho;
 	G;
 	Qmax;
 	Qmin;
 	Area;
 	Factor_Period;
-	!TurbineD;
 	PowerFactor;
-	MaxPower;
-	!TurbineCost;
-	Pi;
+	!MaxPower;
+	!Pi;
 end-initializations
 
 !Variables
@@ -171,8 +171,6 @@ declarations
 	sumHWeight:	dynamic array (Cycles,Periods, Turbines,Scenarios,FlowBreakPoints)	of mpvar;
 	sumQWeight: dynamic array (Cycles,Periods, Turbines,Scenarios,HeadBreakPoints)	of mpvar;
 	diagSum:	dynamic array (Cycles,Periods, Turbines,Scenarios,DiagCons)	of mpvar;
-	!!!Turbine opt!!!
-	!builtTurbine:dynamic array (Turbines) of mpvar;
 end-declarations
 
 forall (cc in Cycles, ss in Scenarios) do
@@ -378,10 +376,10 @@ fopen(OutFile + ".txt", F_OUTPUT);
 writeln("Scenarios: ", nScenarios);
 writeln("Turbines: ", nTurbines);
 writeln("Cycles: ", nCycles);
-writeln("DiagCons: ", DiagCon);
-writeln("DeletedWeightingVar: ", DelWeight);
 writeln("-------------------------------------");
 writeln("Status: ", + status(getprobstat));
+writeln("Time Limit: ", MaxTime);
+writeln("Max Dual Gap: ", MaxGap);
 writeln("-------------------------------------");
 writeln("Profit = ", getobjval);
 writeln("-------------------------------------");
