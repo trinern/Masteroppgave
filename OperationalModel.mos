@@ -27,6 +27,8 @@ parameters
 	Price_file = InFolder + 'PriceC' + nCycles + 'S' + nScenarios + '.txt';
 	Cycle_file = InFolder + 'Cycle_Data' + nCycles + '.txt';
 	
+	Prob=1/nScenarios;
+
 	original = true;
 	SOSimplementation = false;	
 	Presolve = true;
@@ -93,6 +95,8 @@ finalize(HeadBreakPoints);
 finalize(DiagCons);
 finalize(Scenarios);
 
+
+
 !Declarations of parameters in matrix form
 !Matlab generated matrices must be written in the form (dim3, dim2, dim1) for proper reading	
 declarations
@@ -102,14 +106,14 @@ declarations
 	PriceRT:	array(Cycles,Periods,Scenarios)	of real;	!power price
 	ResHead:	array(Cycles,Periods,HeadBreakPoints) of real;!Reservoir head in break point k
 	Power:		array(Cycles, Periods, FlowBreakPoints, HeadBreakPoints )	of real;
-	Prob:		array(Scenarios)	of real;
+	!Prob:		array(Scenarios)	of real;
 	StartH:		array(Cycles)	of real;
 	!TideHead:	array(Cycles, Periods)	of real;
 end-declarations
 
-initializations from Data_file
-	Prob;
-end-initializations
+!initializations from Data_file
+	!Prob;
+!end-initializations
 initializations from Price_file
 	PriceDA;
 	PriceRT;
@@ -238,7 +242,7 @@ declarations
 end-declarations
 
 ObjValue :=
-	sum(ss in Scenarios)Prob(ss)*(
+	sum(ss in Scenarios)Prob*(
 		sum(cc in Cycles,tt in Periods| tt<=nPeriods(cc))(PriceDA(cc,tt,ss)*soldDA(cc,tt)+PriceRT(cc,tt,ss)*soldRT(cc,tt,ss))
 		-
 		sum(cc in Cycles,tt in Periods| tt<=nPeriods(cc),nn in Turbines) OprCost*starting(cc,tt,nn,ss)
