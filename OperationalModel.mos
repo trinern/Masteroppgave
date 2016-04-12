@@ -5,23 +5,26 @@ options explterm, noimplicit;
 
 parameters
 	!input values
-	nScenarios = 2;
+	nScenarios = 5;
 	nTurbines = 1;
-	nCycles = 3;
+	nCycles = 115;
 	DiagCon = 'True';
 	DelWeight = 'True';
-	! Time limit for runtime,  maximum number of seconds for optimisation
-	MaxTime = 7200; !2 h
-	MaxGap = 0.05; !Dual Gap for interruption of optimisation, in percent
+	
+	MaxTime = 10; ! Max runtime in seconds
+	MaxGap = 0.00; !Dual Gap for interruption of optimisation, in percent
 	
 	OutFile = "results\\test_C" + nCycles + "_T" + nTurbines 
-			+ "_S" + nScenarios + "_MaxT" + MaxTime + "_MaxGap" + MaxGap;!+ "_Diag" + DiagCon + "_DelW" + DelWeight; !Output file 
+			+ "_S" + nScenarios + "_MaxT" + MaxTime;!+ "_Diag" + DiagCon + "_DelW" + DelWeight; !Output file 
+	!OutFile = "test_C" + nCycles + "_T" + nTurbines 
+			!+ "_S" + nScenarios + "_MaxT" + MaxTime;
 	
 	!data files
 	InFolder = "data\\";
+	!InFolder = "..\\runMaster\\data\\";
 	
 	Data_file = InFolder + 'Data.txt';
-	Price_file = InFolder + 'Price' + nCycles + '.txt';
+	Price_file = InFolder + 'PriceC' + nCycles + 'S' + nScenarios + '.txt';
 	Cycle_file = InFolder + 'Cycle_Data' + nCycles + '.txt';
 	
 	original = true;
@@ -50,22 +53,16 @@ timetracker := timestamp; ! assigns current "timestamp" to timetracker
 
 !Declarations of sets
 declarations
-	!nCycles:			integer;
 	nMaxPeriods:		integer;
-	!nTurbines:			integer;
 	nFlowBreakPoints:	integer;
 	nHeadBreakPoints:	integer;
-	!nScenarios:			integer;
 	!nScenariosDA:		integer;
 end-declarations
 	
 initializations from Data_file
-	!nCycles;
 	nMaxPeriods;
-	!nTurbines;
 	nFlowBreakPoints;
 	nHeadBreakPoints;
-	!nScenarios;
 	!nScenariosDA;
 end-initializations
 	
@@ -379,7 +376,7 @@ writeln("Cycles: ", nCycles);
 writeln("-------------------------------------");
 writeln("Status: ", + status(getprobstat));
 writeln("Time Limit: ", MaxTime);
-writeln("Max Dual Gap: ", MaxGap);
+writeln("Gap: ", (getparam("xprs_bestbound")-getobjval)/getobjval*100, " %");!gap in % !strfmt(var, 12,2)
 writeln("-------------------------------------");
 writeln("Profit = ", getobjval);
 writeln("-------------------------------------");
