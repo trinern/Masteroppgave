@@ -11,7 +11,7 @@ G:9.81
 Pi: 3.14159
 Qmax:95
 Qmin:39
-Area:150000
+Area:700000
 Factor_Period: 0.5
 PowerFactor: 1000000
 MaxPower: 300000

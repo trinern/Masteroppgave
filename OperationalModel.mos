@@ -341,7 +341,7 @@ end-do
 forall(cc in Cycles,tt in Periods| tt<=nPeriods(cc),nn in Turbines,ss in Scenarios, ii in DiagCons) do
 	SumDiag(cc,tt,nn,ss,ii):=
 		diagSum(cc,tt,nn,ss,ii) = sum(rr in HeadBreakPoints|exists(weight(cc,tt,nn,ss,rr,(ii+rr-nHeadBreakPoints))))weight(cc,tt,nn,ss,rr,(ii+rr-nHeadBreakPoints));
-end-do!)
+end-do
 
 forall(cc in Cycles, tt in Periods| tt<=nPeriods(cc), nn in Turbines,ss in Scenarios) do
 	SOS2R(cc,tt,nn,ss):=
@@ -356,7 +356,7 @@ end-do
 forall(cc in Cycles, tt in Periods| tt<=nPeriods(cc), nn in Turbines,ss in Scenarios) do
 	SOS2Diag(cc,tt,nn,ss):=
 		sum(ii in DiagCons)ii*diagSum(cc,tt,nn,ss,ii) is_sos2;
-end-do!)
+end-do
 
 writeln("\nModel building completed in ", timestamp - timetracker, " seconds");
 writeln("\nSolving model...");
@@ -371,28 +371,39 @@ maximize(ObjValue);
 writeln("\nModel solved in ", timestamp - timetracker," seconds");
 writeln("Status: " + status(getprobstat));
 
+
 !write to file
 
 fopen(OutFile + ".txt", F_OUTPUT);
 writeln("Scenarios: ", nScenarios);
 writeln("Turbines: ", nTurbines);
 writeln("Cycles: ", nCycles);
+writeln("Time Limit: ", MaxTime);
 writeln("-------------------------------------");
 writeln("Status: ", + status(getprobstat));
-writeln("Time Limit: ", MaxTime);
-writeln("Gap: ", (getparam("xprs_bestbound")-getobjval)/getobjval*100, " %");!gap in % !strfmt(var, 12,2)
-writeln("-------------------------------------");
 writeln("Profit = ", getobjval);
-writeln("-------------------------------------");
-!write power and sales in each cycle and period
-forall(ss in Scenarios) do
-	writeln("Scenario: ", ss);
-	writeln("Cycle	Period	Power		DA_sales	RT_sales	DA_price	RT_price");
-		forall(cc in Cycles, tt in Periods| tt<=nPeriods(cc)) do
-			writeln(cc,"	",tt,"	",sum(nn in Turbines)getsol(power(cc,tt,nn,ss)),
-			"		",getsol(soldDA(cc,tt)),"		",getsol(soldRT(cc,tt,ss)),"		",PriceDA(cc,tt,ss),"		",PriceRT(cc,tt,ss));
-		end-do
-end-do
 
+if getobjval<=0 then
+	writeln("No solution found, gap is not available");
+else
+	writeln("Gap: ", (getparam("xprs_bestbound")-getobjval)/getobjval*100, " %");!gap in % !strfmt(var, 12,2)	
+	writeln("-------------------------------------");
+	!write power and sales in each cycle and period
+	write("Cycle Period SoldDA    ");			
+	forall(ss in Scenarios) do
+		write(" Power(s=", ss, ")   SoldRT(s=", ss, ")    ");
+	end-do
+	writeln;
+	forall(cc in Cycles, tt in Periods| tt<=nPeriods(cc)) do
+		if sum(nn in Turbines,ss in Scenarios)getsol(power(cc,tt,nn,ss))>0 then		
+			write(strfmt(cc,1,0), strfmt(tt,8,0), strfmt(getsol(soldDA(cc,tt)),11,8));
+			forall(ss in Scenarios) do
+				write(strfmt(sum(nn in Turbines)getsol(power(cc,tt,nn,ss)),13,0), 
+					strfmt(getsol(soldRT(cc,tt,ss)),11,8) );
+			end-do
+			writeln;
+		end-if		
+	end-do
+end-if
 	
 fclose(F_OUTPUT);
