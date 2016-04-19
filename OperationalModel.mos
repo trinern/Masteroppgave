@@ -1,4 +1,4 @@
-model OperationalVaryingHead
+model OperationalModel
 uses "mmxprs"; !gain access to the Xpress-Optimizer solver
 
 options explterm, noimplicit;
@@ -19,8 +19,7 @@ parameters
 	
 	OutFile = "results\\test_C" + nCycles + "_T" + nTurbines 
 			+ "_S" + nScenarios +"_FP" + nFlowBreakPoints + "_HP" +nHeadBreakPoints + "_MaxT" + MaxTime;!+ "_Diag" + DiagCon + "_DelW" + DelWeight; !Output file 
-	!OutFile = "test_C" + nCycles + "_T" + nTurbines 
-			!+ "_S" + nScenarios + "_MaxT" + MaxTime;
+
 	!data files
 	InFolder = "data\\";
 	!InFolder = "..\\runMaster\\data\\";
@@ -219,7 +218,7 @@ declarations
 	!FeasibleGrid:	dynamic array (Cycles, Periods, Turbines, Scenarios) of linctr;
 	HeadCon:		dynamic array (Cycles, Periods, Scenarios) of linctr;
 	TotalFlow:		dynamic array (Cycles, Scenarios) of linctr;
-	MaxFlow:		dynamic array (Cycles, Periods, Turbines, Scenarios) of linctr;
+	!MaxFlow:		dynamic array (Cycles, Periods, Turbines, Scenarios) of linctr;
 	MinFlow:		dynamic array (Cycles, Periods, Turbines, Scenarios) of linctr;
 	StartCon:		dynamic array (Cycles, Periods, Turbines, Scenarios) of linctr;
 	Symmetry:		dynamic array (Cycles, Periods, Turbines, Scenarios) of linctr;
@@ -303,10 +302,10 @@ forall(cc in Cycles,ss in Scenarios) do! total flow <=Volume0 for sylindrical re
 	end-if				
 end-do
 
-(!forall(cc in Cycles,tt in Periods | tt<=nPeriods(cc),nn in Turbines,ss in Scenarios) do
+forall(cc in Cycles,tt in Periods | tt<=nPeriods(cc),nn in Turbines,ss in Scenarios) do
 	MaxFlow(cc,tt,nn,ss):=
 		flow(cc,tt,nn,ss)-Qmax*running(cc,tt,nn,ss) <= 0;
-end-do!)
+end-do
 
 forall(cc in Cycles,tt in Periods | tt<=nPeriods(cc),nn in Turbines,ss in Scenarios) do
 	MinFlow(cc,tt,nn,ss):=
@@ -391,15 +390,15 @@ else
 	!write power and sales in each cycle and period
 	write(strfmt("Cycle",6), strfmt("Period",7));			
 	forall(ss in Scenarios) do
-		write(strfmt("Power(s=",12),ss,strfmt(")",1), strfmt("SoldDA(s=",12),ss,strfmt(")",1),strfmt("SoldRT(s=",12),ss,strfmt(")",1));
+		write(strfmt("Power(",10),ss,")", strfmt("SoldDA(",10),ss,")",strfmt("SoldRT(",10),ss,")");
 	end-do
 	writeln;
 	forall(cc in Cycles, tt in Periods| tt<=nPeriods(cc)) do
 		if sum(nn in Turbines,ss in Scenarios)getsol(power(cc,tt,nn,ss))>0 then		
 			write(strfmt(cc,6), strfmt(tt,7));
 			forall(ss in Scenarios) do
-				write(strfmt(sum(nn in Turbines)getsol(power(cc,tt,nn,ss)),15,12), strfmt(getsol(soldDA(cc,tt,ss)),15,12)
-					strfmt(getsol(soldRT(cc,tt,ss)),15,12) );
+				write(strfmt(sum(nn in Turbines)getsol(power(cc,tt,nn,ss)),9,5), strfmt(getsol(soldDA(cc,tt,ss)),9,5),
+					strfmt(getsol(soldRT(cc,tt,ss)),9,5) );
 			end-do
 			writeln;
 		end-if		

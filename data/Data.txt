@@ -1,5 +1,5 @@
 nMaxPeriods:13
-nBidPoints:2
+nBidPoints:4
 
 CFD:0
 Duration: 1800
