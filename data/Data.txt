@@ -14,3 +14,4 @@ Area:7000000
 Factor_Period: 0.5
 PowerFactor: 1000000
 MaxPower: 300000
+ScaleFactor: 0.25

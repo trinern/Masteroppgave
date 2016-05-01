@@ -193,3 +193,13 @@ maximize(ObjValue);
 
 writeln("\nModel solved in ", timestamp - timetracker," seconds");
 writeln("Status " + status(getprobstat));
+
+forall(cc in Cycles, tt in Intervals) do
+		if sum(nn in Turbines)getsol(power(cc,tt,nn))>0 then		
+			write(strfmt(cc,6), strfmt(tt,7));
+				write(strfmt(sum(nn in Turbines)getsol(power(cc,tt,nn)),9,5), strfmt(getsol(soldDA(cc,tt)),9,5),
+					strfmt(getsol(soldRT(cc,tt)),9,5) );
+			end-do
+			writeln;
+		end-if		
+	end-do
