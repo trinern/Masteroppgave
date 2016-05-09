@@ -8,11 +8,11 @@ parameters
 	!input values
 	nScenarios = 5;
 	nTurbines = 2;
-	Parts = 3;
+	Parts = 21;
 	nCycles = 1409;
 	nFlowBreakPoints = 4;
 	nHeadBreakPoints = 5;
-	MaxTime = 7*3600; ! Max runtime in seconds
+	MaxTime = 0.66*3600; ! Max runtime in seconds
 	MaxGap = 0.0; !Gap for interruption of optimisation, in percent
 	ScenID = 1; !scenario tree ID for stability testing
 	
@@ -22,21 +22,19 @@ parameters
 	!Datafile= "disk:/folder/name" + nameapp + ".txt";
 	OutFile = "results\\Stability_FP" + nFlowBreakPoints + "_HP" +nHeadBreakPoints + "_S" + nScenarios + "_T" + nTurbines; !Output file 
 	PowerFile = "results\\Stability_FP" + nFlowBreakPoints + "_HP" +nHeadBreakPoints + "_S" + nScenarios + "_T" + nTurbines + "_POWER";
-	!data files
-	PriceFolder = "Parts" + Parts + "_Scenarios" + nScenarios + "_" + ScenID + "\\";
-	!CycleFolder = "Parts" + Parts + "_FP" + nFlowBreakPoints + '_HP' + nHeadBreakPoints;
-	DataFolder = "";
-	Data_file = DataFolder + 'Data.txt';
-	Price_file = PriceFolder + 'Price_R' + nameapp + '.txt';
-	Cycle_file = DataFolder + 'Cycle_R' + nameapp + '.txt';
-	RedCycle_file = DataFolder + 'RedCycleData.txt';
 	
-	original = true;
-	SOSimplementation = false;	
-	Presolve = true;
-	Heuristic = true;
-	Cutting = 'Yes';
-	Print = 'True';
+	!data files
+	!PriceFolder = "Parts" + Parts + "_Scenarios" + nScenarios + "_" + ScenID + "\\";
+	!CycleFolder = "Parts" + Parts + "_FP" + nFlowBreakPoints + '_HP' + nHeadBreakPoints + "\\";
+	!CycleFolder ='';
+	!PriceFolder = '';
+	
+	DataFolder = "data\\";
+	
+	Data_file = DataFolder + 'Data.txt';
+	Cycle_file = DataFolder + 'C' + nCycles + '_FP' + nFlowBreakPoints + '_HP' +nHeadBreakPoints + '.txt';
+	Price_file = DataFolder + 'PriceS' + nScenarios + '_' + ScenID + '.txt';
+	RedCycle_file = DataFolder + 'RedCycleDataP' + Parts + '_' + nameapp + '.txt';
 end-parameters
 
 if(MaxTime>0.0) then
@@ -46,6 +44,18 @@ end-if
 if(MaxGap>0.0) then
 	setparam("XPRS_miprelstop", MaxGap);
 end-if
+
+!setparam("XPRS_VARSELECTION", 1);!1: min of 
+!setparam("XPRS_backtrack", 4);!specifies how to select the next node when a full backtrack is performed
+									! 3: Select the node with the best bound on the solution (default)
+									! 4: Select the deepest node in the search tree (= depth first)
+									! 5: Select the highest node in the search tree (= breadth first)
+setparam("XPRS_cutstrategy", 3);!Cutting strategy. Values:
+									!-1: Automatic selection (default)
+									! 0: No cuts
+									! 1: Conservative cut strategy
+									! 2: Moderate cut strategy
+									! 3: Aggressive cut strategy
 
 declarations
 	status:array({XPRS_OPT,XPRS_UNF,XPRS_INF,XPRS_UNB,XPRS_OTH}) of string;!for status of given solution
@@ -88,7 +98,7 @@ Periods			:= 1 .. nMaxPeriods;!t
 Turbines		:= 1 .. nTurbines;!n
 FlowBreakPoints	:= 1 .. nFlowBreakPoints;!r
 HeadBreakPoints	:= 1 .. nHeadBreakPoints;!k
-DiagCons 		:= 1 .. (nFlowBreakPoints+nHeadBreakPoints-1);!i	
+DiagCons 		:= 3 .. (nFlowBreakPoints+nHeadBreakPoints-1);!i	
 Scenarios		:= 1 .. nScenarios;!s
 BidPoints		:= 1 .. nBidPoints;!b
 
@@ -136,8 +146,6 @@ declarations
 	!CFD:		integer;
 	Duration:	integer;
 	OprCost:	integer;
-	Rho:		integer;
-	G:			real;
 	Qmax:		integer;
 	Qmin:		integer;
 	Area:		real;
@@ -150,8 +158,6 @@ initializations from Data_file
 	!CFD;
 	Duration;
 	OprCost;
-	Rho;
-	G;
 	Qmax;
 	Qmin;
 	Area;
@@ -208,14 +214,17 @@ forall (cc in CyclesReduced, tt in Periods | tt<=nPeriods(cc), nn in Turbines, s
 	running(cc,tt,nn,ss) is_binary;
 end-do
 
+!variable holding sum of weighting variables over each grid column
 forall(cc in CyclesReduced,tt in Periods|tt<=nPeriods(cc),nn in Turbines, ss in Scenarios,rr in FlowBreakPoints|sum(kk in HeadBreakPoints|exists(weight(cc,tt,nn,ss,rr,kk)))Power(cc,tt,rr,kk)>=0) do
 	create(sumHWeight(cc,tt,nn,ss,rr));
 end-do
 
+!variable holding sum of weighting variables over each grid row
 forall(cc in CyclesReduced,tt in Periods|tt<=nPeriods(cc),nn in Turbines, ss in Scenarios,kk in HeadBreakPoints|sum(rr in FlowBreakPoints|exists(weight(cc,tt,nn,ss,rr,kk)))Power(cc,tt,rr,kk)>=0) do
 	create(sumQWeight(cc,tt,nn,ss,kk));
 end-do
 
+!variable holding sum of weighting variables over grid diagonals, used for ensuring unique interpolation
 forall(cc in CyclesReduced,tt in Periods|tt<=nPeriods(cc),nn in Turbines, ss in Scenarios,ii in DiagCons) do
 	create(diagSum(cc,tt,nn,ss,ii));
 end-do
@@ -251,31 +260,41 @@ ObjValue :=
 		sum(cc in CyclesReduced,tt in Periods,nn in Turbines) OprCost*starting(cc,tt,nn,ss)
 		)/ScaleFactor;
 
+(!ObjValue :=
+	sum(cc in CyclesReduced, tt in Periods, nn in Turbines, ss in Scenarios)Prob*power(cc,tt,nn,ss)/ScaleFactor;!)
+
+!Flow is a weighted sum of flow grid point values
 forall(cc in CyclesReduced,tt in Periods| tt<=nPeriods(cc),nn in Turbines,ss in Scenarios | exists(flow(cc,tt,nn,ss))) do
 	FlowCon(cc,tt,nn,ss):=
 		flow(cc,tt,nn,ss)=sum(rr in FlowBreakPoints,kk in HeadBreakPoints) Flow(rr)*weight(cc,tt,nn,ss,rr,kk);
 end-do
 
+!Reservoir head is a weighted sum of Reservoir head grid point values
 forall(cc in CyclesReduced, tt in Periods| tt<=nPeriods(cc), nn in Turbines,ss in Scenarios | exists(resHeadTurbine(cc,tt,nn,ss))) do
 	ResHeadCon(cc,tt,nn,ss):=
 		resHeadTurbine(cc,tt,nn,ss)=sum(rr in FlowBreakPoints,kk in HeadBreakPoints) ResHead(cc,tt,kk)*weight(cc,tt,nn,ss,rr,kk);
 end-do
 
+!Turbine dependent reservoir head variables must be equal
 forall(cc in CyclesReduced, tt in Periods| tt<=nPeriods(cc), nn in Turbines,ss in Scenarios | exists(resHeadTurbine(cc,tt,nn,ss))) do
 	ResHeadFixCon(cc,tt,nn,ss):=
 		resHead(cc,tt,ss)=resHeadTurbine(cc,tt,nn,ss);
 end-do
 
+!power generated is a weighted sum of power grid point values
 forall(cc in CyclesReduced, tt in Periods| tt<=nPeriods(cc), nn in Turbines,ss in Scenarios | exists(power(cc,tt,nn,ss))) do
 	PowerCon(cc,tt,nn,ss):=
-		power(cc,tt,nn,ss)=sum(rr in FlowBreakPoints,kk in HeadBreakPoints) Power(cc,tt,rr,kk)*weight(cc,tt,nn,ss,rr,kk)/PowerFactor;
+		power(cc,tt,nn,ss)=sum(rr in FlowBreakPoints,kk in HeadBreakPoints) 0.9*Power(cc,tt,rr,kk)*weight(cc,tt,nn,ss,rr,kk)/PowerFactor;
 end-do
 
+!Power generated is scaled to MW and sold in the day-ahead and real-time market
 forall(cc in CyclesReduced, tt in Periods| tt<=nPeriods(cc),ss in Scenarios) do
 	ProdSalesBal(cc,tt,ss):=
-		soldDA(cc,tt,ss) + soldRT(cc,tt,ss) <= sum(nn in Turbines)power(cc,tt,nn,ss)*Factor_Period;
+		soldDA(cc,tt,ss) + soldRT(cc,tt,ss) = sum(nn in Turbines)power(cc,tt,nn,ss)*Factor_Period;
 end-do
 
+!Delivery obligation in day-ahead market based on bidding volumes and market realisations
+!Obligation calculated as interpolation between bidding volumes
 forall(cc in CyclesReduced, tt in Periods| tt<=nPeriods(cc),ss in Scenarios, bb in BidPoints|bb>1) do
 	if (PriceDA(cc,tt,ss)>=BidPrice(cc,tt,bb-1) and PriceDA(cc,tt,ss)<BidPrice(cc,tt,bb)) then
 		SalesDA(cc,tt,ss):=
@@ -283,92 +302,144 @@ forall(cc in CyclesReduced, tt in Periods| tt<=nPeriods(cc),ss in Scenarios, bb 
 			+
 			(BidPrice(cc,tt,bb)-PriceDA(cc,tt,ss))/(BidPrice(cc,tt,bb)-BidPrice(cc,tt,bb-1))*bidDA(cc,tt,bb-1);
 	end-if
-end-do
+end-do!)
 
+!Weighting variables sum to 1, grid includes zero flow
 forall(cc in CyclesReduced,tt in Periods| tt<=nPeriods(cc), nn in Turbines,ss in Scenarios) do
 	SumWeight(cc,tt,nn,ss):=
 		sum(rr in FlowBreakPoints,kk in HeadBreakPoints) weight(cc,tt,nn,ss,rr,kk)=1;!Zero flow included in Break Points
 end-do
 
+!reservoir head decreases/increases with flow out of/into reservoir
 forall(cc in CyclesReduced, tt in Periods|tt>1 and tt<=nPeriods(cc),ss in Scenarios) do
 	if StartH(cc)<0 then 
 		HeadFlowCon(cc,tt,ss):=
-			resHead(cc,tt,ss)>=StartH(cc)+Duration/Area/ScaleFactor*sum(i in 1..(tt-1),nn in Turbines)flow(cc,tt,nn,ss);
+			resHead(cc,tt,ss)=StartH(cc)+Duration/(Area*ScaleFactor)*sum(ii in 1..(tt-1),nn in Turbines)flow(cc,ii,nn,ss);
 	else 
 		HeadFlowCon(cc,tt,ss):=
-			resHead(cc,tt,ss)<=StartH(cc)-Duration/Area/ScaleFactor*sum(i in 1..(tt-1),nn in Turbines)flow(cc,tt,nn,ss);		
+			resHead(cc,tt,ss)=StartH(cc)-Duration/(Area*ScaleFactor)*sum(ii in 1..(tt-1),nn in Turbines)flow(cc,ii,nn,ss);		
 	end-if
-end-do
+end-do!)
 
+!Reservoir head equals tide level for t=1
 forall(cc in CyclesReduced, ss in Scenarios) do
 	HeadFlowCon(cc,1,ss):=
 		resHead(cc,1,ss)=StartH(cc);
 end-do		
 
-forall(cc in CyclesReduced,ss in Scenarios) do! total flow <=Volume0 for sylindrical reservoir
-	if StartH(cc)<0 then
-		TotalFlow(cc,ss):=
-			sum(tt in Periods,nn in Turbines)flow(cc,tt,nn,ss)+ spill(cc,ss)= -2*StartH(cc)*Area*ScaleFactor;
+!Limiting total flow in a cycle to reservoir volume = HeadDifference*ReservoirArea. 
+!ScaleFactor reduces total reservoir volume to facilitate reduced number of turbines
+forall(cc in CyclesReduced,ss in Scenarios) do
+	if cc<nCycles then
+		if StartH(cc)<0 then
+			TotalFlow(cc,ss):=
+				sum(tt in Periods,nn in Turbines)flow(cc,tt,nn,ss)*Duration + spill(cc,ss)= -(StartH(cc)-StartH(cc+1))*Area*ScaleFactor-70200;
+		else
+			TotalFlow(cc,ss):=
+				sum(tt in Periods,nn in Turbines)flow(cc,tt,nn,ss)*Duration + spill(cc,ss)= +(StartH(cc)-StartH(cc+1))*Area*ScaleFactor-70200;
+		end-if
 	else
-		TotalFlow(cc,ss):=
-			sum(tt in Periods,nn in Turbines)flow(cc,tt,nn,ss)+ spill(cc,ss)= +2*StartH(cc)*Area*ScaleFactor;
+		if StartH(cc)<0 then
+			TotalFlow(cc,ss):=
+				sum(tt in Periods,nn in Turbines)flow(cc,tt,nn,ss)*Duration + spill(cc,ss)= -2*StartH(cc)*Area*ScaleFactor-70200;
+		else
+			TotalFlow(cc,ss):=
+				sum(tt in Periods,nn in Turbines)flow(cc,tt,nn,ss)*Duration + spill(cc,ss)= +2*StartH(cc)*Area*ScaleFactor-70200;
+		end-if			
 	end-if				
 end-do
 
+!max flow
 forall(cc in CyclesReduced,tt in Periods | tt<=nPeriods(cc),nn in Turbines,ss in Scenarios | exists(flow(cc,tt,nn,ss))) do
 	MaxFlow(cc,tt,nn,ss):=
 		flow(cc,tt,nn,ss)-Qmax*running(cc,tt,nn,ss) <= 0;
 end-do
 
+!Min flow
 forall(cc in CyclesReduced,tt in Periods | tt<=nPeriods(cc),nn in Turbines,ss in Scenarios | exists(flow(cc,tt,nn,ss))) do
 	MinFlow(cc,tt,nn,ss):=
 		flow(cc,tt,nn,ss)-Qmin*running(cc,tt,nn,ss) >= 0;
 end-do
 
+!control of binary starting and running variables in time periods > 1
 forall(cc in CyclesReduced,tt in Periods | tt>1 and tt<=nPeriods(cc),nn in Turbines,ss in Scenarios | exists(running(cc,tt,nn,ss))) do
 	StartCon(cc,tt,nn,ss):=
 		running(cc,(tt-1),nn,ss)+starting(cc,tt,nn,ss)-running(cc,tt,nn,ss)>=0;
 end-do
 
+!control of binary starting and running variables in the first time period
 forall(cc in CyclesReduced,nn in Turbines,ss in Scenarios | exists(running(cc,1,nn,ss))) do
 	StartCon(cc,1,nn,ss):=
 		starting(cc,1,nn,ss)=running(cc,1,nn,ss);
 end-do
 
+!symmetry breaking constraint for turbines
 forall(cc in CyclesReduced,tt in Periods | tt<=nPeriods(cc),nn in Turbines|nn<nTurbines,ss in Scenarios | exists(flow(cc,tt,nn,ss)) and exists(flow(cc,tt,nn+1,ss))) do
 	Symmetry(cc,tt,nn,ss):=
 		flow(cc,tt,nn,ss)-flow(cc,tt,(nn+1),ss)>=0;
 end-do
 
+!sum of weighting variables over each grid column
 forall(cc in CyclesReduced,tt in Periods| tt<=nPeriods(cc),nn in Turbines,ss in Scenarios,rr in FlowBreakPoints | exists(sumHWeight(cc,tt,nn,ss,rr))) do
 	SumHeadWeight(cc,tt,nn,ss,rr):=
 		sumHWeight(cc,tt,nn,ss,rr) = sum(kk in HeadBreakPoints) weight(cc,tt,nn,ss,rr,kk);
 end-do
 
+!sum of weighting variables over each grid row
 forall(cc in CyclesReduced,tt in Periods| tt<=nPeriods(cc),nn in Turbines,ss in Scenarios, kk in HeadBreakPoints | exists(sumQWeight(cc,tt,nn,ss,kk))) do
 	SumFlowWeight(cc,tt,nn,ss,kk):=
 		sumQWeight(cc,tt,nn,ss,kk) = sum(rr in FlowBreakPoints) weight(cc,tt,nn,ss,rr,kk);
 end-do
 
+!sum of weighting variables over each grid diagonal
 forall(cc in CyclesReduced,tt in Periods| tt<=nPeriods(cc),nn in Turbines,ss in Scenarios, ii in DiagCons) do
 	SumDiag(cc,tt,nn,ss,ii):=
-		diagSum(cc,tt,nn,ss,ii) = sum(rr in HeadBreakPoints|exists(weight(cc,tt,nn,ss,rr,(ii+rr-nHeadBreakPoints))))weight(cc,tt,nn,ss,rr,(ii+rr-nHeadBreakPoints));
-end-do
+		diagSum(cc,tt,nn,ss,ii) = sum(rr in FlowBreakPoints|exists(weight(cc,tt,nn,ss,rr,(ii+rr-nFlowBreakPoints))))weight(cc,tt,nn,ss,rr,(ii+rr-nFlowBreakPoints));
+end-do!)
 
+!SOS2 imposed on sum of weighting variables over each grid column
 forall(cc in CyclesReduced, tt in Periods| tt<=nPeriods(cc), nn in Turbines,ss in Scenarios) do
 	SOS2R(cc,tt,nn,ss):=
 		sum(rr in FlowBreakPoints) rr*sumHWeight(cc,tt,nn,ss,rr) is_sos2;
 end-do
 
+!SOS2 imposed on sum of weighting variables over each grid row
 forall(cc in CyclesReduced, tt in Periods| tt<=nPeriods(cc), nn in Turbines,ss in Scenarios) do
 	SOS2K(cc,tt,nn,ss):=
 		sum(kk in HeadBreakPoints) kk*sumQWeight(cc,tt,nn,ss,kk) is_sos2;
 end-do
 
+!SOS2 imposed on sum of weighting variables over each grid diagonal
 forall(cc in CyclesReduced, tt in Periods| tt<=nPeriods(cc), nn in Turbines,ss in Scenarios) do
 	SOS2Diag(cc,tt,nn,ss):=
 		sum(ii in DiagCons)ii*diagSum(cc,tt,nn,ss,ii) is_sos2;
-end-do
+end-do!)
+
+!Procedure setmipdir for user input on branching priority
+	!Procedure options:
+		!setmipdir(A:linctr, B:int, C:real)
+		!setmipdir(A:mpvar, B:int, C:real)
+		!setmipdir(A:linctr, D:int)
+		!setmipdir(A:mpvar, D:int)
+					!B = XPRS_PR, C=[1:1000]: define branching priority for variable or constraint
+						!lower value of C for higher branching priority 
+					!D = XPRS_UP: upward branching first
+					!D = XPRS_DN: downward branching first
+					
+(!forall (cc in CyclesReduced, tt in Periods| tt<=nPeriods(cc), nn in Turbines,ss in Scenarios) do
+	setmipdir(running(cc,tt,nn,ss), XPRS_PR, 100);
+end-do!)
+
+(!forall(cc in CyclesReduced, tt in Periods| tt<=nPeriods(cc), nn in Turbines,ss in Scenarios) do
+	setmipdir(SOS2R(cc,tt,nn,ss), XPRS_PR, 200);
+	setmipdir(SOS2K(cc,tt,nn,ss), XPRS_PR, 300);
+end-do!)
+
+
+(!forall (cc in CyclesReduced,tt in Periods ,nn in Turbines, ss in Scenarios, rr in FlowBreakPoints,kk in HeadBreakPoints
+	|exists (weight(cc,tt,nn,ss,floor(nFlowBreakPoints/2),floor(nHeadBreakPoints/2)))) do
+		setmipdir(weight(cc,tt,nn,ss,2,2), XPRS_PR, 300);
+end-do!)
 
 writeln("\nModel building completed in ", timestamp - timetracker, " seconds");
 writeln("\nSolving model...");
@@ -383,25 +454,24 @@ maximize(ObjValue);
 writeln("\nModel solved in ", timestamp - timetracker," seconds");
 writeln("Status: " + status(getprobstat));
 
-
 !write to file
 
 fopen(OutFile + ".txt", F_APPEND);
-!IF?
+
 writeln("--------------------------------------------------------------------------------------------------------------------");
-	writeln("Stability Test");
+	writeln("Stability Test for Reduced number of cycles");
 	writeln("Scenarios: ", nScenarios);
 	writeln("Turbines: ", nTurbines);
 	writeln("Time Limit: ", MaxTime);
+	writeln("Parts: ", Parts);
 	writeln("Model solved in ", timestamp - timetracker," seconds");
 	writeln("Max Gap: ", MaxGap);
-!end-if
 writeln("-------------------------------------");
 !writeln("--------------------------------------------------------------------------------------------------------------------");
 writeln("Status: ", + status(getprobstat));
 writeln("Profit = ", getobjval);
 if getobjval<=0 then
-	writeln("No solution found, gap is not available");
+	writeln("Either zero solution or no solution found, gap is not available");
 else
 	writeln("Gap: ", (getparam("xprs_bestbound")-getobjval)/getobjval*100, " %");!gap in %	
 	writeln("-------------------------------------");
@@ -430,14 +500,15 @@ fopen(PowerFile + ".txt", F_APPEND);
 !write power in each cycle and period
 	write(strfmt("Cycle",6), strfmt("Period",7));			
 	forall(ss in Scenarios) do
-		write(strfmt("Power(",10),ss,")");
+		write(strfmt("Power(",10),ss,")", strfmt("SoldDA(",10),ss,")",strfmt("SoldRT(",10),ss,")");
 	end-do
 	writeln;
 	forall(cc in CyclesReduced, tt in Periods| tt<=nPeriods(cc)) do
 		if sum(nn in Turbines,ss in Scenarios)getsol(power(cc,tt,nn,ss))>0 then		
 			write(strfmt(cc,6), strfmt(tt,7));
 			forall(ss in Scenarios) do
-				write(strfmt(sum(nn in Turbines)getsol(power(cc,tt,nn,ss)),12,5));
+				write(strfmt(sum(nn in Turbines)getsol(power(cc,tt,nn,ss)),12,5), strfmt(getsol(soldDA(cc,tt,ss)),12,5),
+					strfmt(getsol(soldRT(cc,tt,ss)),12,5));
 			end-do
 			writeln;
 		end-if		
@@ -445,3 +516,4 @@ fopen(PowerFile + ".txt", F_APPEND);
 fclose(F_APPEND);
 
 end-model
+

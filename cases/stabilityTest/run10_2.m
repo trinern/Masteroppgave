@@ -1,6 +1,6 @@
 %Script running separate optimisation problems in Xpress
 
 MoselFile = 'Stability10_2.mos'; 
-for i=1:3
+for i=1:12
   moselexec(MoselFile, ['nameapp=' num2str(i)]);
 end
