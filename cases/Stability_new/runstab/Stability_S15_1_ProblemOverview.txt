@@ -1,0 +1,88 @@
+Price Case: 1 Markets: 2
+Scenarios: 15
+Turbines: 2
+Time Limit: 6624
+---------------------------------------------------------------------------
+Cycle: 190
+Profit = 4143.2
+Status: Unfinished
+Model solved in 6623.21 seconds
+Gap: 28.9238 %
+Upper bound: 5341.57
+---------------------------------------------------------------------------
+Cycle: 198
+Profit = 7817.15
+Status: Unfinished
+Model solved in 6623.13 seconds
+Gap: 26.4281 %
+Upper bound: 9883.07
+---------------------------------------------------------------------------
+Cycle: 206
+Profit = 15554.8
+Status: Unfinished
+Model solved in 6623.27 seconds
+Gap: 7.86472 %
+Upper bound: 16778.1
+---------------------------------------------------------------------------
+Cycle: 214
+Profit = 21098.4
+Status: Unfinished
+Model solved in 6623.25 seconds
+Gap: 5.55474 %
+Upper bound: 22270.4
+---------------------------------------------------------------------------
+Cycle: 390
+Profit = 15113.3
+Status: Unfinished
+Model solved in 6623.56 seconds
+Gap: 6.86438 %
+Upper bound: 16150.7
+---------------------------------------------------------------------------
+Cycle: 398
+Profit = 11177.7
+Status: Unfinished
+Model solved in 6623.29 seconds
+Gap: 6.68712 %
+Upper bound: 11925.2
+---------------------------------------------------------------------------
+Cycle: 406
+Profit = 5234.81
+Status: Unfinished
+Model solved in 6623.25 seconds
+Gap: 26.3169 %
+Upper bound: 6612.44
+---------------------------------------------------------------------------
+Cycle: 414
+Profit = 4460.48
+Status: Unfinished
+Model solved in 6623.16 seconds
+Gap: 29.0006 %
+Upper bound: 5754.04
+---------------------------------------------------------------------------
+Cycle: 648
+Profit = 0
+Status: Unfinished
+Model solved in 6623.23 seconds
+Zero-solution or no solution found, gap is not available
+Upper bound: 6082.62
+---------------------------------------------------------------------------
+Cycle: 656
+Profit = 6411.17
+Status: Unfinished
+Model solved in 6623.27 seconds
+Gap: 28.5142 %
+Upper bound: 8239.26
+---------------------------------------------------------------------------
+Cycle: 664
+Profit = 12716.9
+Status: Unfinished
+Model solved in 6623.2 seconds
+Gap: 5.74856 %
+Upper bound: 13447.9
+---------------------------------------------------------------------------
+Cycle: 672
+Profit = 15587.7
+Status: Unfinished
+Model solved in 6623.31 seconds
+Gap: 6.32632 %
+Upper bound: 16573.9

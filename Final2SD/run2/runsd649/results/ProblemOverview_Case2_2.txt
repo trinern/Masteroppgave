@@ -1,0 +1,7 @@
+---------------------------------------------------------------------------
+Cycle: 649
+Profit = 121744
+Status: Unfinished
+Model solved in 18000.4 seconds
+Gap: 55.5421 %
+Upper bound: 189363

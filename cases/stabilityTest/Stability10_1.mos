@@ -1,5 +1,6 @@
 model OperationalModelParts
 uses "mmxprs"; !gain access to the Xpress-Optimizer solver
+uses "mmsystem"; !text to int
 
 options explterm, noimplicit;
 
@@ -10,6 +11,8 @@ parameters
 	nTurbines = 2;
 	Parts = 12;
 	nCycles = 1409;
+	Markets = 2;
+	PriceCase = 1;
 	nFlowBreakPoints = 4;
 	nHeadBreakPoints = 5;
 	MaxTime = 1.84*3600; ! Max runtime in seconds
@@ -17,10 +20,16 @@ parameters
 	ScenID = 1; !scenario tree ID for stability testing
 	
 	Prob=1/nScenarios;
-	nameapp='';
+	nameapp='1';
 	
-	OutFile = "results\\Stability" + "_S" + nScenarios + "_" + nameapp + ".txt"; !Output file 
-	PowerFile = "results\\Stability" + "_S" + nScenarios + "_" + nameapp + "_POWER" + ".txt";
+	ProblemFile="Stability_S" + nScenarios + "_" + ScenID + "_ProblemOverview.txt";
+	ProfitFile="Stability_S" + nScenarios + "_" + ScenID + "_Profits.txt";
+	PowerFile="Stability_S" + nScenarios + "_" + ScenID + "_Power.txt";
+	SalesFile="Stability_S" + nScenarios + "_" + ScenID + "_Sales.txt";
+	BidFile="Stability_S" + nScenarios + "_" + ScenID + "_Bids.txt";
+	
+	!OutFile = "results\\Stability" + "_S" + nScenarios + "_" + nameapp + ".txt"; !Output file 
+	!PowerFile = "results\\Stability" + "_S" + nScenarios + "_" + nameapp + "_POWER" + ".txt";
 	
 	!data files
 	!PriceFolder = "Parts" + Parts + "_Scenarios" + nScenarios + "_" + ScenID + "\\";
@@ -453,65 +462,70 @@ maximize(ObjValue);
 writeln("\nModel solved in ", timestamp - timetracker," seconds");
 writeln("Status: " + status(getprobstat));
 
-
-!write to file
-
-fopen(OutFile, F_APPEND);
-
-writeln("--------------------------------------------------------------------------------------------------------------------");
-	writeln("Stability test for Reduced number of cycles");
+!write problem overview to file
+fopen(ProblemFile, F_APPEND);
+if parseint(nameapp,1) = 1 then
+	writeln("Price Case: ", PriceCase, " Markets: ", Markets);
 	writeln("Scenarios: ", nScenarios);
 	writeln("Turbines: ", nTurbines);
 	writeln("Time Limit: ", MaxTime);
-	writeln("Model solved in ", timestamp - timetracker," seconds");
-	!writeln("Max Gap: ", MaxGap);
-writeln("-------------------------------------");
-!writeln("--------------------------------------------------------------------------------------------------------------------");
-writeln("Status: ", + status(getprobstat));
+end-if
+writeln("---------------------------------------------------------------------------");
+forall (cc in CyclesReduced) do
+	writeln("Cycle: ", cc);
+end-do
 writeln("Profit = ", getobjval);
+writeln("Status: ", + status(getprobstat));
+writeln("Model solved in ", timestamp - timetracker," seconds");
 if getobjval<=0 then
 	writeln("Zero-solution or no solution found, gap is not available");
 else
 	writeln("Gap: ", (getparam("xprs_bestbound")-getobjval)/getobjval*100, " %");!gap in %	
-	writeln("-------------------------------------");
-
-	!write power and sales in each cycle and period
-	write(strfmt("Cycle",6), strfmt("Period",7));			
-	forall(ss in Scenarios) do
-		write(strfmt("Power(",10),ss,")", strfmt("SoldDA(",10),ss,")",strfmt("SoldRT(",10),ss,")");
-	end-do
-	writeln;
-	forall(cc in CyclesReduced, tt in Periods| tt<=nPeriods(cc)) do
-		if sum(nn in Turbines,ss in Scenarios)getsol(power(cc,tt,nn,ss))>0 then		
-			write(strfmt(cc,6), strfmt(tt,7));
-			forall(ss in Scenarios) do
-				write(strfmt(sum(nn in Turbines)getsol(power(cc,tt,nn,ss)),12,5), strfmt(getsol(soldDA(cc,tt,ss)),12,5),
-					strfmt(getsol(soldRT(cc,tt,ss)),12,5) );
-			end-do
-			writeln;
-		end-if		
-	end-do
 end-if
-	
+writeln("Upper bound: ", getparam("xprs_bestbound"));
 fclose(F_APPEND);
 
+!write profits to file
+fopen(ProfitFile, F_APPEND);
+if parseint(nameapp,1) = 1 then
+	writeln(strfmt("Cycle",6), strfmt("Profits", 12));
+end-if
+forall(cc in CyclesReduced) do
+	writeln(strfmt(cc, 6), strfmt(getobjval, 12,2));
+end-do
+fclose(F_APPEND);
+
+!write generation schedule to file
 fopen(PowerFile, F_APPEND);
-!write power in each cycle and period
-	write(strfmt("Cycle",6), strfmt("Period",7));			
-	forall(ss in Scenarios) do
-		write(strfmt("Power(",10),ss,")", strfmt("SoldDA(",10),ss,")",strfmt("SoldRT(",10),ss,")");
-	end-do
-	writeln;
-	forall(cc in CyclesReduced, tt in Periods| tt<=nPeriods(cc)) do
-		if sum(nn in Turbines,ss in Scenarios)getsol(power(cc,tt,nn,ss))>0 then		
-			write(strfmt(cc,6), strfmt(tt,7));
-			forall(ss in Scenarios) do
-				write(strfmt(sum(nn in Turbines)getsol(power(cc,tt,nn,ss)),12,5), strfmt(getsol(soldDA(cc,tt,ss)),12,5),
-					strfmt(getsol(soldRT(cc,tt,ss)),12,5));
-			end-do
-			writeln;
-		end-if		
-	end-do
+if parseint(nameapp,1) = 1 then
+	writeln(strfmt("Cycle",6), strfmt("Period",7), strfmt("Scenario",10), strfmt("Power Gen",12), strfmt("#Turbines",12));
+end-if
+forall(cc in CyclesReduced, tt in Periods|tt<=nPeriods(cc), ss in Scenarios) do
+	writeln(strfmt(cc,6), strfmt(tt,7), strfmt(ss,10), strfmt(sum(nn in Turbines)getsol(power(cc,tt,nn,ss)),12,2), 
+	strfmt(sum(nn in Turbines)getsol(running(cc,tt,nn,ss)),12));
+end-do
+fclose(F_APPEND);
+
+!write sales solutions to file
+fopen(SalesFile, F_APPEND);
+if parseint(nameapp,1) = 1 then
+	writeln(strfmt("Cycle",6), strfmt("Period", 7), strfmt("Scenario", 10), strfmt("SoldDA",12),
+	strfmt("SoldRT",12));
+end-if
+forall(cc in CyclesReduced, tt in Periods|tt<=nPeriods(cc), ss in Scenarios) do
+	writeln(strfmt(cc,6), strfmt(tt,7), strfmt(ss,10), strfmt(getsol(soldDA(cc,tt,ss)),12,2), 
+	strfmt(getsol(soldRT(cc,tt,ss)),12,2));
+end-do
+fclose(F_APPEND);
+
+!write bids to file
+fopen(BidFile, F_APPEND);
+if parseint(nameapp,1) = 1 then
+	writeln(strfmt("Cycle",6), strfmt("Period", 7), strfmt("BidPrice", 10), strfmt("Bid Volumes",12));
+end-if
+forall(cc in CyclesReduced, tt in Periods|tt<=nPeriods(cc), bb in BidPoints) do
+	writeln(strfmt(cc,6), strfmt(tt,7), strfmt(bb,10), strfmt(getsol(bidDA(cc,tt,bb)),12,2));
+end-do
 fclose(F_APPEND);
 
 end-model

@@ -1,0 +1,64 @@
+Price Case: 2Markets: 2
+Scenarios: 15
+Turbines: 2
+Time Limit: 18000
+---------------------------------------------------------------------------
+Cycle: 191
+Profit = 164606
+Status: Unfinished
+Model solved in 18000.3 seconds
+Gap: 53.9603 %
+---------------------------------------------------------------------------
+Cycle: 636
+Profit = 247790
+Status: Unfinished
+Model solved in 18000.3 seconds
+Gap: 41.084 %
+---------------------------------------------------------------------------
+Cycle: 648
+Profit = 149806
+Status: Unfinished
+Model solved in 18000.4 seconds
+Gap: 48.4239 %
+---------------------------------------------------------------------------
+Cycle: 1111
+Profit = 243230
+Status: Unfinished
+Model solved in 18000.4 seconds
+Gap: 53.4076 %
+---------------------------------------------------------------------------
+Cycle: 194
+Profit = 215940
+Status: Unfinished
+Model solved in 18014 seconds
+Gap: 42.2404 %
+---------------------------------------------------------------------------
+Cycle: 642
+Profit = 145581
+Status: Unfinished
+Model solved in 18000.4 seconds
+Gap: 40.0159 %
+---------------------------------------------------------------------------
+Cycle: 1105
+Profit = 90218.8
+Status: Unfinished
+Model solved in 18000.3 seconds
+Gap: 56.7534 %
+---------------------------------------------------------------------------
+Cycle: 197
+Profit = 207154
+Status: Unfinished
+Model solved in 18000.5 seconds
+Gap: 49.4041 %
+---------------------------------------------------------------------------
+Cycle: 645
+Profit = 119275
+Status: Unfinished
+Model solved in 18000.2 seconds
+Gap: 55.4212 %
+---------------------------------------------------------------------------
+Cycle: 1108
+Profit = 257504
+Status: Unfinished
+Model solved in 18000.5 seconds
+Gap: 57.8055 %

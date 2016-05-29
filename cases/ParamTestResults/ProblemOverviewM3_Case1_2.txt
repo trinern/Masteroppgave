@@ -1,0 +1,10 @@
+Price Case: 1Markets: 2
+Scenarios: 15
+Turbines: 2
+Time Limit: 5400
+---------------------------------------------------------------------------
+Cycle: 191
+Profit = 0
+Status: Unfinished
+Model solved in 5400.56 seconds
+Zero-solution or no solution found, gap is not available

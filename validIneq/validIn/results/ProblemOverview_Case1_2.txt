@@ -1,0 +1,288 @@
+Price Case: 1 Markets: 2
+Scenarios: 15
+Turbines: 2
+Time Limit: 14400
+---------------------------------------------------------------------------
+Cycle: 191
+Profit = 139317
+Status: Unfinished
+Model solved in 14400.4 seconds
+Gap: 19.2364 %
+Upper bound: 166117
+---------------------------------------------------------------------------
+Cycle: 194
+Profit = 187499
+Status: Unfinished
+Model solved in 14400.4 seconds
+Gap: 13.7803 %
+Upper bound: 213337
+---------------------------------------------------------------------------
+Cycle: 197
+Profit = 184195
+Status: Unfinished
+Model solved in 14400.5 seconds
+Gap: 12.8612 %
+Upper bound: 207884
+---------------------------------------------------------------------------
+Cycle: 200
+Profit = 223688
+Status: Unfinished
+Model solved in 14400.3 seconds
+Gap: 26.8045 %
+Upper bound: 283646
+---------------------------------------------------------------------------
+Cycle: 203
+Profit = 375434
+Status: Unfinished
+Model solved in 14432.3 seconds
+Gap: 5.57418 %
+Upper bound: 396361
+---------------------------------------------------------------------------
+Cycle: 206
+Profit = 529868
+Status: Unfinished
+Model solved in 14409.1 seconds
+Gap: 0.822982 %
+Upper bound: 534229
+---------------------------------------------------------------------------
+Cycle: 209
+Profit = 471175
+Status: Unfinished
+Model solved in 14400.6 seconds
+Gap: 1.40487 %
+Upper bound: 477794
+---------------------------------------------------------------------------
+Cycle: 212
+Profit = 551264
+Status: Unfinished
+Model solved in 14400.3 seconds
+Gap: 3.91826 %
+Upper bound: 572863
+---------------------------------------------------------------------------
+Cycle: 215
+Profit = 1.11765e+06
+Status: Optimum found
+Model solved in 234.35 seconds
+Gap: 0.00878729 %
+Upper bound: 1.11775e+06
+---------------------------------------------------------------------------
+Cycle: 218
+Profit = 715098
+Status: Unfinished
+Model solved in 14400.4 seconds
+Gap: 3.51827 %
+Upper bound: 740257
+---------------------------------------------------------------------------
+Cycle: 621
+Profit = 632352
+Status: Unfinished
+Model solved in 14400.3 seconds
+Gap: 4.08471 %
+Upper bound: 658182
+---------------------------------------------------------------------------
+Cycle: 624
+Profit = 528434
+Status: Unfinished
+Model solved in 14400.4 seconds
+Gap: 5.57461 %
+Upper bound: 557893
+---------------------------------------------------------------------------
+Cycle: 627
+Profit = 472467
+Status: Unfinished
+Model solved in 14400.4 seconds
+Gap: 0.583234 %
+Upper bound: 475223
+---------------------------------------------------------------------------
+Cycle: 630
+Profit = 253651
+Status: Unfinished
+Model solved in 14400.2 seconds
+Gap: 5.66508 %
+Upper bound: 268021
+---------------------------------------------------------------------------
+Cycle: 633
+Profit = 277338
+Status: Unfinished
+Model solved in 14400.5 seconds
+Gap: 6.45283 %
+Upper bound: 295235
+---------------------------------------------------------------------------
+Cycle: 636
+Profit = 203202
+Status: Unfinished
+Model solved in 14400.6 seconds
+Gap: 14.4905 %
+Upper bound: 232647
+---------------------------------------------------------------------------
+Cycle: 639
+Profit = 183906
+Status: Unfinished
+Model solved in 14400.4 seconds
+Gap: 7.30264 %
+Upper bound: 197336
+---------------------------------------------------------------------------
+Cycle: 642
+Profit = 117821
+Status: Unfinished
+Model solved in 14400.2 seconds
+Gap: 11.8761 %
+Upper bound: 131813
+---------------------------------------------------------------------------
+Cycle: 645
+Profit = 101467
+Status: Unfinished
+Model solved in 14400.2 seconds
+Gap: 20.6834 %
+Upper bound: 122454
+---------------------------------------------------------------------------
+Cycle: 649
+Profit = 100274
+Status: Unfinished
+Model solved in 14400.3 seconds
+Gap: 23.2645 %
+Upper bound: 123602
+---------------------------------------------------------------------------
+Cycle: 1102
+Profit = 119581
+Status: Unfinished
+Model solved in 14400.4 seconds
+Gap: 15.7212 %
+Upper bound: 138381
+---------------------------------------------------------------------------
+Cycle: 1105
+Profit = 86175.7
+Status: Unfinished
+Model solved in 14400.4 seconds
+Gap: 31.9137 %
+Upper bound: 113678
+---------------------------------------------------------------------------
+Cycle: 1108
+Profit = 190363
+Status: Unfinished
+Model solved in 14400.2 seconds
+Gap: 28.4025 %
+Upper bound: 244431
+---------------------------------------------------------------------------
+Cycle: 1111
+Profit = 211049
+Status: Unfinished
+Model solved in 14400.6 seconds
+Gap: 14.4288 %
+Upper bound: 241501
+---------------------------------------------------------------------------
+Cycle: 1114
+Profit = 319849
+Status: Unfinished
+Model solved in 14400.5 seconds
+Gap: 4.31987 %
+Upper bound: 333667
+---------------------------------------------------------------------------
+Cycle: 1117
+Profit = 225924
+Status: Unfinished
+Model solved in 14400.5 seconds
+Gap: 4.7488 %
+Upper bound: 236652
+---------------------------------------------------------------------------
+Cycle: 1120
+Profit = 408454
+Status: Unfinished
+Model solved in 14400.4 seconds
+Gap: 4.7555 %
+Upper bound: 427879
+
+
+---------------------------------------------------------------------------
+Cycle: 1123
+Profit = 719882
+Status: Unfinished
+Model solved in 14400.4 seconds
+Gap: 1.22847 %
+Upper bound: 728725
+
+---------------------------------------------------------------------------
+Cycle: 1126
+Profit = 719207
+Status: Unfinished
+Model solved in 14400.3 seconds
+Gap: 2.70436 %
+Upper bound: 738657
+---------------------------------------------------------------------------
+Cycle: 1129
+Profit = 562878
+Status: Unfinished
+Model solved in 14400.2 seconds
+Gap: 0.692802 %
+Upper bound: 566777
+---------------------------------------------------------------------------
+Cycle: 1362
+Profit = 675570
+Status: Unfinished
+Model solved in 14400.3 seconds
+Gap: 3.9502 %
+Upper bound: 702256
+---------------------------------------------------------------------------
+Cycle: 1365
+Profit = 600414
+Status: Optimum found
+Model solved in 1613.05 seconds
+Gap: 0.00987999 %
+Upper bound: 600473
+---------------------------------------------------------------------------
+Cycle: 1368
+Profit = 444531
+Status: Unfinished
+Model solved in 14400.4 seconds
+Gap: 3.08472 %
+Upper bound: 458243
+---------------------------------------------------------------------------
+Cycle: 1371
+Profit = 412023
+Status: Unfinished
+Model solved in 14400.4 seconds
+Gap: 11.4699 %
+Upper bound: 459282
+---------------------------------------------------------------------------
+Cycle: 1374
+Profit = 327005
+Status: Unfinished
+Model solved in 14400.3 seconds
+Gap: 10.609 %
+Upper bound: 361697
+---------------------------------------------------------------------------
+Cycle: 1377
+Profit = 276712
+Status: Unfinished
+Model solved in 14400.5 seconds
+Gap: 1.81458 %
+Upper bound: 281733
+---------------------------------------------------------------------------
+Cycle: 1380
+Profit = 122310
+Status: Unfinished
+Model solved in 14400.5 seconds
+Gap: 20.8668 %
+Upper bound: 147832
+---------------------------------------------------------------------------
+Cycle: 1383
+Profit = 130961
+Status: Unfinished
+Model solved in 14400.4 seconds
+Gap: 28.0579 %
+Upper bound: 167706
+---------------------------------------------------------------------------
+Cycle: 1386
+Profit = 224812
+Status: Unfinished
+Model solved in 14400.2 seconds
+Gap: 7.52253 %
+Upper bound: 241723
+---------------------------------------------------------------------------
+Cycle: 1389
+Profit = 142594
+Status: Unfinished
+Model solved in 14400.2 seconds
+Gap: 13.1634 %
+Upper bound: 161365
+

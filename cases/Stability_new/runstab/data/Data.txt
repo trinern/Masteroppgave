@@ -1,0 +1,13 @@
+nMaxPeriods:13
+nBidPoints:4
+
+CFD:0
+Duration: 1800
+OprCost: 5
+Qmax:140
+Qmin:39
+Area:7000000
+Factor_Period: 0.5
+PowerFactor: 1000000
+MaxPower: 300000
+ScaleFactor: 0.0588

@@ -1,6 +1,0 @@
-PriceRT: [
-     ] 
-PriceDA: [
-     ] 
-BidPrice: [
-     ] 
