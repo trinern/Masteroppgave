@@ -4,9 +4,9 @@ screen -r 56020.pts-6.compute-5-2
 ssh compute-5-4
 screen
 
-cd ../../storage/global/linnesc/validInSD
+cd ../../storage/global/linnesc/stabilitySD
 module load matlab/2014a 
 module load xpress/7.9.0 
 export MATLABPATH="${MATLABPATH}:${XPRESSDIR}/matlab" 
-matlab -nodisplay -nojvm<run10.m
+matlab -nodisplay -nojvm<run10_1.m
 

@@ -1,0 +1,74 @@
+Price Case: 2 Markets: 2
+Scenarios: 15
+Turbines: 2
+Time Limit: 18000
+---------------------------------------------------------------------------
+Cycle: 191
+Profit = 147908
+Status: Unfinished
+Model solved in 18000.3 seconds
+Gap: 28.8258 %
+Upper bound: 190544
+---------------------------------------------------------------------------
+Cycle: 203
+Profit = 431134
+Status: Unfinished
+Model solved in 18000.2 seconds
+Gap: 10.5041 %
+Upper bound: 476421
+---------------------------------------------------------------------------
+Cycle: 215
+Profit = 1.23596e+06
+Status: Unfinished
+Model solved in 18010.4 seconds
+Gap: 0.838484 %
+Upper bound: 1.24632e+06
+---------------------------------------------------------------------------
+Cycle: 627
+Profit = 529933
+Status: Unfinished
+Model solved in 18000.4 seconds
+Gap: 2.70198 %
+Upper bound: 544251
+---------------------------------------------------------------------------
+Cycle: 639
+Profit = 212730
+Status: Unfinished
+Model solved in 18000.4 seconds
+Gap: 13.5706 %
+Upper bound: 241599
+---------------------------------------------------------------------------
+Cycle: 1102
+Profit = 140239
+Status: Unfinished
+Model solved in 18000.2 seconds
+Gap: 19.1886 %
+Upper bound: 167149
+---------------------------------------------------------------------------
+Cycle: 1114
+Profit = 339799
+Status: Unfinished
+Model solved in 18000.3 seconds
+Gap: 11.0289 %
+Upper bound: 377275
+---------------------------------------------------------------------------
+Cycle: 1126
+Profit = 789770
+Status: Unfinished
+Model solved in 18000.3 seconds
+Gap: 4.55889 %
+Upper bound: 825774
+---------------------------------------------------------------------------
+Cycle: 1368
+Profit = 489792
+Status: Unfinished
+Model solved in 18000.4 seconds
+Gap: 5.46774 %
+Upper bound: 516573
+---------------------------------------------------------------------------
+Cycle: 1380
+Profit = 151900
+Status: Unfinished
+Model solved in 18000.2 seconds
+Gap: 28.5896 %
+Upper bound: 195328

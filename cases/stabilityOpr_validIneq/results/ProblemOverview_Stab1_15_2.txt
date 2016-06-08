@@ -1,0 +1,74 @@
+Price Case: 1 Markets: 2
+Scenarios: 15
+Turbines: 2
+Time Limit: 18000
+---------------------------------------------------------------------------
+Cycle: 191
+Profit = 139317
+Status: Unfinished
+Model solved in 18000.4 seconds
+Gap: 19.2423 %
+Upper bound: 166125
+---------------------------------------------------------------------------
+Cycle: 203
+Profit = 375434
+Status: Unfinished
+Model solved in 18000.6 seconds
+Gap: 5.57 %
+Upper bound: 396345
+---------------------------------------------------------------------------
+Cycle: 215
+Profit = 1.11765e+06
+Status: Optimum found
+Model solved in 264.946 seconds
+Gap: 0.00878729 %
+Upper bound: 1.11775e+06
+---------------------------------------------------------------------------
+Cycle: 627
+Profit = 472467
+Status: Unfinished
+Model solved in 18000.8 seconds
+Gap: 0.59147 %
+Upper bound: 475262
+---------------------------------------------------------------------------
+Cycle: 639
+Profit = 183906
+Status: Unfinished
+Model solved in 18000.5 seconds
+Gap: 7.19975 %
+Upper bound: 197147
+---------------------------------------------------------------------------
+Cycle: 1102
+Profit = 119581
+Status: Unfinished
+Model solved in 18000.3 seconds
+Gap: 15.6375 %
+Upper bound: 138280
+---------------------------------------------------------------------------
+Cycle: 1114
+Profit = 319849
+Status: Unfinished
+Model solved in 18000.4 seconds
+Gap: 4.34512 %
+Upper bound: 333747
+---------------------------------------------------------------------------
+Cycle: 1126
+Profit = 719207
+Status: Unfinished
+Model solved in 18000.4 seconds
+Gap: 2.70237 %
+Upper bound: 738643
+---------------------------------------------------------------------------
+Cycle: 1368
+Profit = 444531
+Status: Unfinished
+Model solved in 18000.3 seconds
+Gap: 3.10564 %
+Upper bound: 458336
+---------------------------------------------------------------------------
+Cycle: 1380
+Profit = 122614
+Status: Unfinished
+Model solved in 18000.5 seconds
+Gap: 20.5163 %
+Upper bound: 147770

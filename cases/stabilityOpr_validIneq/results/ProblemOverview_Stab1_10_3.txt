@@ -1,0 +1,74 @@
+Price Case: 1 Markets: 2
+Scenarios: 10
+Turbines: 2
+Time Limit: 18000
+---------------------------------------------------------------------------
+Cycle: 191
+Profit = 137502
+Status: Unfinished
+Model solved in 18000.2 seconds
+Gap: 14.7994 %
+Upper bound: 157852
+---------------------------------------------------------------------------
+Cycle: 203
+Profit = 374953
+Status: Unfinished
+Model solved in 18000.4 seconds
+Gap: 4.79786 %
+Upper bound: 392943
+---------------------------------------------------------------------------
+Cycle: 215
+Profit = 1.06284e+06
+Status: Optimum found
+Model solved in 37.19 seconds
+Gap: 0 %
+Upper bound: 1.06284e+06
+---------------------------------------------------------------------------
+Cycle: 627
+Profit = 441690
+Status: Unfinished
+Model solved in 18000.2 seconds
+Gap: 0.657863 %
+Upper bound: 444596
+---------------------------------------------------------------------------
+Cycle: 639
+Profit = 186764
+Status: Unfinished
+Model solved in 18000.2 seconds
+Gap: 4.23565 %
+Upper bound: 194675
+---------------------------------------------------------------------------
+Cycle: 1102
+Profit = 125098
+Status: Unfinished
+Model solved in 18000.2 seconds
+Gap: 12.4128 %
+Upper bound: 140626
+---------------------------------------------------------------------------
+Cycle: 1114
+Profit = 298036
+Status: Unfinished
+Model solved in 18000.3 seconds
+Gap: 1.67623 %
+Upper bound: 303032
+---------------------------------------------------------------------------
+Cycle: 1126
+Profit = 775969
+Status: Unfinished
+Model solved in 18009.5 seconds
+Gap: 0.187814 %
+Upper bound: 777426
+---------------------------------------------------------------------------
+Cycle: 1368
+Profit = 423697
+Status: Unfinished
+Model solved in 18000.2 seconds
+Gap: 2.59827 %
+Upper bound: 434706
+---------------------------------------------------------------------------
+Cycle: 1380
+Profit = 121816
+Status: Unfinished
+Model solved in 18000.2 seconds
+Gap: 19.5264 %
+Upper bound: 145603

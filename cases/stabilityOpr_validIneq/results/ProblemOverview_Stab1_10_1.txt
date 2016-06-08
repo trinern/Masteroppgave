@@ -1,0 +1,74 @@
+Price Case: 1 Markets: 2
+Scenarios: 10
+Turbines: 2
+Time Limit: 18000
+---------------------------------------------------------------------------
+Cycle: 191
+Profit = 147657
+Status: Unfinished
+Model solved in 18000.4 seconds
+Gap: 13.3313 %
+Upper bound: 167341
+---------------------------------------------------------------------------
+Cycle: 203
+Profit = 368036
+Status: Unfinished
+Model solved in 18000.3 seconds
+Gap: 4.74689 %
+Upper bound: 385507
+---------------------------------------------------------------------------
+Cycle: 215
+Profit = 1.1334e+06
+Status: Optimum found
+Model solved in 37.775 seconds
+Gap: 0 %
+Upper bound: 1.1334e+06
+---------------------------------------------------------------------------
+Cycle: 627
+Profit = 480188
+Status: Unfinished
+Model solved in 18000.4 seconds
+Gap: 0.546481 %
+Upper bound: 482812
+---------------------------------------------------------------------------
+Cycle: 639
+Profit = 176118
+Status: Unfinished
+Model solved in 18000.2 seconds
+Gap: 7.32336 %
+Upper bound: 189016
+---------------------------------------------------------------------------
+Cycle: 1102
+Profit = 132698
+Status: Unfinished
+Model solved in 18000.6 seconds
+Gap: 7.39206 %
+Upper bound: 142508
+---------------------------------------------------------------------------
+Cycle: 1114
+Profit = 291460
+Status: Unfinished
+Model solved in 18000.2 seconds
+Gap: 1.64516 %
+Upper bound: 296255
+---------------------------------------------------------------------------
+Cycle: 1126
+Profit = 793020
+Status: Unfinished
+Model solved in 18000.1 seconds
+Gap: 0.339952 %
+Upper bound: 795716
+---------------------------------------------------------------------------
+Cycle: 1368
+Profit = 372986
+Status: Unfinished
+Model solved in 18000.1 seconds
+Gap: 2.92211 %
+Upper bound: 383885
+---------------------------------------------------------------------------
+Cycle: 1380
+Profit = 123648
+Status: Unfinished
+Model solved in 18000.2 seconds
+Gap: 14.3221 %
+Upper bound: 141357

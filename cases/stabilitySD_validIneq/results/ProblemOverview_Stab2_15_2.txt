@@ -1,0 +1,18 @@
+Price Case: 2 Markets: 2
+Scenarios: 15
+Turbines: 2
+Time Limit: 18000
+---------------------------------------------------------------------------
+Cycle: 191
+Profit = 162771
+Status: Unfinished
+Model solved in 18000.4 seconds
+Gap: 22.5145 %
+Upper bound: 199418
+---------------------------------------------------------------------------
+Cycle: 203
+Profit = 453188
+Status: Unfinished
+Model solved in 18000.3 seconds
+Gap: 12.2964 %
+Upper bound: 508913

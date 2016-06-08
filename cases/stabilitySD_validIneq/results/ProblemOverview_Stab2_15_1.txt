@@ -1,0 +1,74 @@
+Price Case: 2 Markets: 2
+Scenarios: 15
+Turbines: 2
+Time Limit: 18000
+---------------------------------------------------------------------------
+Cycle: 191
+Profit = 160060
+Status: Unfinished
+Model solved in 18000.2 seconds
+Gap: 25.8444 %
+Upper bound: 201427
+---------------------------------------------------------------------------
+Cycle: 203
+Profit = 409422
+Status: Unfinished
+Model solved in 18000.2 seconds
+Gap: 17.1457 %
+Upper bound: 479621
+---------------------------------------------------------------------------
+Cycle: 215
+Profit = 1.15261e+06
+Status: Unfinished
+Model solved in 18000.1 seconds
+Gap: 1.21268 %
+Upper bound: 1.16658e+06
+---------------------------------------------------------------------------
+Cycle: 627
+Profit = 524835
+Status: Unfinished
+Model solved in 18000.4 seconds
+Gap: 3.80915 %
+Upper bound: 544827
+---------------------------------------------------------------------------
+Cycle: 639
+Profit = 215005
+Status: Unfinished
+Model solved in 18001.2 seconds
+Gap: 16.137 %
+Upper bound: 249700
+---------------------------------------------------------------------------
+Cycle: 1102
+Profit = 151577
+Status: Unfinished
+Model solved in 18000.3 seconds
+Gap: 15.6269 %
+Upper bound: 175264
+---------------------------------------------------------------------------
+Cycle: 1114
+Profit = 349153
+Status: Unfinished
+Model solved in 18000.3 seconds
+Gap: 10.8513 %
+Upper bound: 387041
+---------------------------------------------------------------------------
+Cycle: 1126
+Profit = 856931
+Status: Unfinished
+Model solved in 18000.2 seconds
+Gap: 3.81189 %
+Upper bound: 889596
+---------------------------------------------------------------------------
+Cycle: 1368
+Profit = 471382
+Status: Unfinished
+Model solved in 18000.5 seconds
+Gap: 6.05536 %
+Upper bound: 499926
+---------------------------------------------------------------------------
+Cycle: 1380
+Profit = 162993
+Status: Unfinished
+Model solved in 18000.4 seconds
+Gap: 25.7376 %
+Upper bound: 204943
